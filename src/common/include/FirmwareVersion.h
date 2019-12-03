@@ -1,0 +1,16 @@
+#pragma once
+
+#define MODEL "ATOM32"
+
+#define FIRMWARE_VER_MAJOR 0
+#define FIRMWARE_VER_MINOR 8
+#define FIRMWARE_VER_PATCH 525
+#define FIRMWARE_VERSION "0.8.525"
+#define KERNEL_VERSION "v3.2-59-g8e51f7e23"
+#define HARDWARE_ARCH "esp32"
+#define HARDWARE_VERSION "devboard"
+
+#define BUILD_TIME "2019-11-06T15:17:54+0200"
+#define BUILD_BUILDER "volodymyr@volodymyr-MS-7924"
+#define BUILD_BRANCH "EATT-0007"
+#define BUILD_COMMIT "bdc67c91b233527a4b66bb4d0b3f3084179a8b31"

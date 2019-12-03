@@ -1,0 +1,16 @@
+# CMake build tree
+CMakeLists.txt.user
+build/
+cmake-build-debug/
+
+# Visual Studio Code directory
+.vscode/
+
+# CLion
+.cproject
+.idea
+.project
+.settings
+
+#kdiff3
+*.orig
