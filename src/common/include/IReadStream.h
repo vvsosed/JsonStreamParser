@@ -143,6 +143,10 @@ public:
         return 0;
     }
 
+    virtual bool reset() {
+    	return false;
+    }
+
     template <typename ValueType>
     class Iterator : public std::iterator<std::input_iterator_tag, ValueType> {
         static const int END_OF_ITERATIONS = -1;

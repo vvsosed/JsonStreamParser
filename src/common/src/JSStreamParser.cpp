@@ -127,23 +127,19 @@ bool JSStreamParser::isActiveBlockNeededToParse() const {
     return ( m_ignoreLevel == 0 ) || ( m_ignoreLevel > m_depth );
 }
 
-void JSStreamParser::onSymbolParsed( char /*symbol*/ ) {}
-
 bool JSStreamParser::onLongToken() {
     // Keep trancated value by default
     return false;
 }
 
 bool JSStreamParser::parse( IReadStream& stream ) {
-    char ch;
-    while( stream.read( &ch, 1 ) ) {
-        onSymbolParsed( ch );
+    while( stream.read( &m_currSymbol, 1 ) ) {
+        onSymbolParsed();
 
-        switch( ch ) {
+        switch( m_currSymbol ) {
         case '{':
-        case '[':
             if( isQuotedTokenProcessing() ) {
-                addCharToToken( ch );
+                addCharToToken( m_currSymbol );
                 break;
             }
 
@@ -156,24 +152,64 @@ bool JSStreamParser::parse( IReadStream& stream ) {
                 disableValueTokenProcessing();
             }
 
-            goDeeper();
+            if ( goDeeper() && !onObjectBegin() ) {
+            	return false;
+            }
             break;
 
         case '}':
+		if( isQuotedTokenProcessing() ) {
+			addCharToToken( m_currSymbol );
+			break;
+		}
+
+		if( isNotQuotedTokenProcessing() ) {
+			if( !processActiveTokenAndResetState() ) {
+				return false;
+			}
+		}
+
+		if ( goHigher() && !onObjectEnd() ) {
+			return false;
+		}
+		break;
+
+        case '[':
+			if( isQuotedTokenProcessing() ) {
+				addCharToToken( m_currSymbol );
+				break;
+			}
+
+			if( isNotQuotedTokenProcessing() ) {
+				if( !processActiveTokenAndResetState() ) {
+					return false;
+				}
+			}
+			else if( isValueProcessing() ) {
+				disableValueTokenProcessing();
+			}
+
+			if ( goDeeper() && !onArrayBegin() ) {
+				return false;
+			}
+			break;
+
         case ']':
-            if( isQuotedTokenProcessing() ) {
-                addCharToToken( ch );
-                break;
-            }
+			if( isQuotedTokenProcessing() ) {
+				addCharToToken( m_currSymbol );
+				break;
+			}
 
-            if( isNotQuotedTokenProcessing() ) {
-                if( !processActiveTokenAndResetState() ) {
-                    return false;
-                }
-            }
+			if( isNotQuotedTokenProcessing() ) {
+				if( !processActiveTokenAndResetState() ) {
+					return false;
+				}
+			}
 
-            goHigher();
-            break;
+			if ( goHigher() && !onArrayEnd() ) {
+				return false;
+			}
+			break;
 
         case '\'':
         case '"':
@@ -189,7 +225,7 @@ bool JSStreamParser::parse( IReadStream& stream ) {
 
         case ':':
             if( isQuotedTokenProcessing() ) {
-                addCharToToken( ch );
+                addCharToToken( m_currSymbol );
                 break;
             }
             else if( isNotQuotedTokenProcessing() ) {
@@ -203,22 +239,27 @@ bool JSStreamParser::parse( IReadStream& stream ) {
 
         case ',':
             if( isQuotedTokenProcessing() ) {
-                addCharToToken( ch );
+                addCharToToken( m_currSymbol );
                 break;
             }
-            else if( isNotQuotedTokenProcessing() ) {
+
+            if( isNotQuotedTokenProcessing() ) {
                 if( !processActiveTokenAndResetState() ) {
                     return false;
                 }
+            }
+
+            if ( !onNext() ) {
+            	return false;
             }
             break;
 
         case '.':
             if( isQuotedTokenProcessing() ) {
-                addCharToToken( ch );
+                addCharToToken( m_currSymbol );
             }
             else if( isNotQuotedTokenProcessing() ) {
-                addCharToToken( ch );
+                addCharToToken( m_currSymbol );
                 enableFloatTokenProcessing();
             }
             break;
@@ -228,7 +269,7 @@ bool JSStreamParser::parse( IReadStream& stream ) {
         case '\r':
         case '\n':
             if( isQuotedTokenProcessing() ) {
-                addCharToToken( ch );
+                addCharToToken( m_currSymbol );
             }
             else if( isNotQuotedTokenProcessing() ) {
                 if( !processActiveTokenAndResetState() ) {
@@ -239,11 +280,11 @@ bool JSStreamParser::parse( IReadStream& stream ) {
 
         default:
             if( isQuotedTokenProcessing() ) {
-                addCharToToken( ch );
+                addCharToToken( m_currSymbol );
             }
             else {
                 enableNotQuotedTokenProcessing();
-                addCharToToken( ch );
+                addCharToToken( m_currSymbol );
             }
             break;
         }
@@ -272,34 +313,25 @@ bool JSStreamParser::processActiveTokenAndResetState() {
     return result;
 }
 
-void JSStreamParser::goHigher() {
+bool JSStreamParser::goHigher() {
     if( m_depth > 0 ) {
         --m_depth;
     }
 
     if( m_ignoreLevel == 0 ) {
-        onStepOut();
+        return true;
     }
     else if( isActiveBlockNeededToParse() ) {
         m_ignoreLevel = 0;
-        onStepOut();
+        return true;
     }
+
+    return false;
 }
 
-void JSStreamParser::goDeeper() {
+bool JSStreamParser::goDeeper() {
     ++m_depth;
-
-    if( isActiveBlockNeededToParse() ) {
-        onStepIn();
-    }
-}
-
-bool JSStreamParser::onStepIn() {
-    return true;
-}
-
-bool JSStreamParser::onStepOut() {
-    return true;
+    return isActiveBlockNeededToParse();
 }
 
 }  // namespace common

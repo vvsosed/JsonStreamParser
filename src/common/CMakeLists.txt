@@ -19,8 +19,6 @@ add_library(common STATIC
 	src/values/UserCodeValue.cpp
 	)
 
-target_include_directories(common
-	PUBLIC include
-	)
+target_include_directories(common PUBLIC include )
 
-target_link_libraries(common hub_core network znet freertos esp32 soc heap newlib log nvs_flash spi_flash )
+#target_link_libraries(common hub_core network znet freertos esp32 soc heap newlib log nvs_flash spi_flash )

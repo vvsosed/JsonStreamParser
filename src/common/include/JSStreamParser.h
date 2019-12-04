@@ -54,9 +54,17 @@ public:
         return m_buffer;
     }
 
+    inline auto getBuffer() {
+		return m_buffer;
+	}
+
     inline std::size_t getTokenSize() const {
         return m_activeTokenSize;
     }
+
+    inline char currSymbol() const {
+		return m_currSymbol;
+	}
 
     bool isSame( const char* token, std::size_t tokenSize ) const;
 
@@ -87,11 +95,27 @@ public:
 protected:
     virtual bool processActiveToken() = 0;
 
-    virtual bool onStepIn();
+    virtual bool onObjectBegin() {
+        return true;
+    }
 
-    virtual bool onStepOut();
+    virtual bool onObjectEnd() {
+		return true;
+	}
 
-    virtual void onSymbolParsed( char symbol );
+    virtual bool onArrayBegin() {
+        return true;
+    }
+
+    virtual bool onArrayEnd() {
+		return true;
+	}
+
+    virtual void onSymbolParsed() {};
+
+    virtual bool onNext() {
+    	return true;
+    };
 
     /**
      * @brief Called when token doesn't fit into buffer
@@ -132,9 +156,9 @@ private:
 
     void addCharToToken( char value );
 
-    void goHigher();
+    bool goHigher();
 
-    void goDeeper();
+    bool goDeeper();
 
 private:
     std::uint8_t m_stateFlags = Flags::Empty;
@@ -145,6 +169,7 @@ private:
     std::size_t m_activeTokenSize = 0;
     std::size_t m_maxBufferSize = 0;
     char* m_buffer = nullptr;
+    char m_currSymbol;
 };
 
 }  // namespace common

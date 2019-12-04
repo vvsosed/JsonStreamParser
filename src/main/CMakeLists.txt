@@ -1,2 +1,7 @@
+set(MAIN_SRC
+    main.cpp
+	TestCommonJsParser.cpp )
 
-ADD_EXECUTABLE(main main.cpp)
+add_executable(main ${MAIN_SRC})
+
+target_link_libraries( main common storage jssp)

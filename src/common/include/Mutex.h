@@ -3,8 +3,7 @@
 #include <assert.h>
 #include <chrono>
 
-#include <freertos/FreeRTOS.h>
-#include <freertos/semphr.h>
+#include <mutex>
 
 namespace common {
 class Mutex {
@@ -12,17 +11,9 @@ public:
     using Timeout = std::chrono::milliseconds;
 
 public:
-    Mutex()
-    : m_semaphore( nullptr ) {
-        vSemaphoreCreateBinary( m_semaphore );
+    Mutex() = default;
 
-        assert( m_semaphore != nullptr );
-    }
-
-    ~Mutex() {
-        vSemaphoreDelete( m_semaphore );
-        m_semaphore = nullptr;
-    }
+    ~Mutex() = default;
 
     Mutex( const Mutex& other ) = delete;
     Mutex( const Mutex&& other ) = delete;
@@ -33,18 +24,21 @@ public:
     //
     inline bool take( Timeout timeout = Timeout( 0 ) ) {
         if( timeout == Timeout( 0 ) ) {
-            return ( pdPASS == xSemaphoreTake( m_semaphore, portMAX_DELAY ) );
+        	m_mutex.lock();
+            return true;
         }
         else {
-            return ( pdPASS == xSemaphoreTake( m_semaphore, pdMS_TO_TICKS( timeout.count() ) ) );
+        	m_mutex.lock();
+			return true;
         }
     }
 
     inline bool release() {
-        return ( pdPASS == xSemaphoreGive( m_semaphore ) );
+    	m_mutex.unlock();
+        return true;
     }
 
 private:
-    SemaphoreHandle_t m_semaphore;
+    std::mutex m_mutex;
 };
 };  // namespace common

@@ -1,0 +1,550 @@
+{
+    "version":"1.0",
+    "when":[
+        {
+            "item_filter": {
+                 "names":["dimmer", "meter"]
+            },
+            "label": {
+                  "lang_tag": "ui7_token",
+                  "text": "English string"
+            },
+            "blockType":"when",
+            "blockOptions":{
+                "method":{
+                    "name":"isItemState",
+                    "args":{
+                        "item":"item",
+                        "value":"value",
+                        "armed":"armed"
+                    }
+                }
+            },
+            "fields":[
+                {
+                    "name":"item",
+                    "type":"item",
+                    "value":"value"
+                },
+                {
+                    "name":"value",
+                    "type":"token",
+                    "options":[
+                        {
+                            "value":"manual_lock_operation",
+                            "label": {
+                                 "lang_tag": "ui7_token",
+                                 "text": "English string"
+                             }
+                        },
+                        {
+                            "value":"manual_unlock_operation",
+                            "label": {
+                                 "lang_tag": "ui7_token",
+                                 "text": "English string"
+                            }
+                        }
+                    ],
+                    "value": "manual_unlock_operation"
+                },
+                {
+                    "name":"armed",
+                    "type":"bool",
+                    "value":true
+                }
+            ]
+        },
+        {
+            "item_filter": {
+                 "names":["dimmer", "meter"]
+            },
+            "label":{
+                "lang_tag":"ui7_token",
+                "text":"English string"
+            },
+            "blockType":"when",
+            "blockOptions":{
+                "method":{
+                    "name":"compareNumbers",
+                    "args":{
+                        "item":"item",
+                        "comparator":"comparator",
+                        "value":"value"
+                    }
+                }
+            },
+            "fields":[
+                {
+                    "name":"item",
+                    "type":"item"
+                },
+                {
+                    "name":"comparator",
+                    "type":"string",
+                    "options":[
+                        {
+                            "value":"==",
+                            "label":{
+                                "lang_tag":"ui7_token",
+                                "text":"English string"
+                            }
+                        },
+                        {
+                            "value":"!=",
+                            "label":{
+                                "lang_tag":"ui7_token",
+                                "text":"English string"
+                            }
+                        },
+                        {
+                            "value":">",
+                            "label":{
+                                "lang_tag":"ui7_token",
+                                "text":"English string"
+                            }
+                        },
+                        {
+                            "value":"<",
+                            "label":{
+                                "lang_tag":"ui7_token",
+                                "text":"English string"
+                            }
+                        },
+                        {
+                            "value":">=",
+                            "label":{
+                                "lang_tag":"ui7_token",
+                                "text":"English string"
+                            }
+                        },
+                        {
+                            "value":"<=",
+                            "label":{
+                                "lang_tag":"ui7_token",
+                                "text":"English string"
+                            }
+                        }
+                    ],
+                    "value":"=="
+                },
+                {
+                    "name":"value",
+                    "editable":true,
+                    "type":"int",
+                    "value":80
+                }
+            ]
+        },
+        {
+            "item_filter": {
+                 "names":["dimmer", "meter"]
+            },
+           "label": {
+                "lang_tag": "ui7_token",
+                "text": "English string"
+           },
+           "blockType":"when",
+           "blockOptions":{
+              "method":{
+                 "name":"isItemState",
+                 "args":{
+                    "item":"item",
+                    "value":"value"
+                 }
+              }
+           },
+           "fields":[
+              {
+                 "name":"item",
+                 "type":"item",
+                 "value":"value"
+              },
+              {
+                 "name":"value",
+                 "type":"bool",
+                 "options":[
+                    {
+                       "value":true,
+                       "label": {
+                           "lang_tag": "ui7_token",
+                           "text": "English string"
+                        }
+                    },
+                    {
+                       "value":false,
+                       "label": {
+                           "lang_tag": "ui7_token",
+                           "text": "English string"
+                       }
+                    }
+                 ],
+                 "value": true
+              },
+              {
+                  "name":"armed",
+                  "type":"bool",
+                  "value":true
+              }
+           ]
+        },
+        {
+            "item_filter": {
+                 "names":["dimmer", "meter"]
+            },
+           "label": {
+                "lang_tag": "ui7_token",
+                "text": "English string"
+           },
+           "blockType":"when",
+           "blockOptions":{
+              "method":{
+                 "name":"compareNumbers",
+                 "args":{
+                    "item":"item",
+                    "comparator":"comparator",
+                    "value":"value"
+                 }
+              }
+           },
+           "fields":[
+              {
+                 "name":"item",
+                 "type":"item",
+                 "value":"value"
+              },
+              {
+                 "name":"comparator",
+                 "type":"string",
+                 "options":[
+                    {
+                       "value":"==",
+                       "label": {
+                           "lang_tag": "ui7_token",
+                           "text": "English string"
+                       }
+                    },
+                    {
+                       "value":"!=",
+                       "label": {
+                           "lang_tag": "ui7_token",
+                           "text": "English string"
+                       }
+                    },
+                    {
+                       "value":">",
+                       "label": {
+                           "lang_tag": "ui7_token",
+                           "text": "English string"
+                       }
+                    },
+                    {
+                       "value":"<",
+                       "label": {
+                           "lang_tag": "ui7_token",
+                           "text": "English string"
+                       }
+                    },
+                    {
+                       "value":">=",
+                       "label": {
+                           "lang_tag": "ui7_token",
+                           "text": "English string"
+                       }
+                    },
+                    {
+                       "value":"<=",
+                       "label": {
+                           "lang_tag": "ui7_token",
+                           "text": "English string"
+                       }
+                    }
+                 ],
+                 "value": "=="
+              },
+              {
+                 "name":"value",
+                 "type":"float",
+                 "editable": true,
+                 "value":33.3
+              }
+           ]
+        },
+        {
+            "item_filter": {
+                 "names":["dimmer", "meter"]
+            },
+           "label": {
+                "lang_tag": "ui7_token",
+                "text": "English string"
+           },
+           "blockType":"when",
+           "blockOptions":{
+              "method":{
+                 "name":"isDictonaryValueState",
+                 "args":{
+                    "item":"item",
+                    "value":"value"
+                 }
+              }
+           },
+           "fields":[
+              {
+                 "name":"item",
+                 "type":"item",
+                 "value":"value"
+              },
+              {
+                 "name":"value",
+                 "type":"token",
+                 "options":[
+                    {
+                       "value":"low_battary",
+                       "label": {
+                           "lang_tag": "ui7_token",
+                           "text": "English string"
+                        }
+                    },
+                    {
+                       "value":"not_detected",
+                       "label": {
+                           "lang_tag": "ui7_token",
+                           "text": "English string"
+                       }
+                    }
+                 ],
+                 "value": "low_battary"
+              }
+           ]
+        },
+        {
+            "item_filter": {
+                 "names":["dimmer", "meter"]
+            },
+           "label": {
+                "lang_tag": "ui7_token",
+                "text": "English string"
+           },
+           "blockType":"when",
+           "blockOptions":{
+              "method":{
+                 "name":"isItemState",
+                 "args":{
+                    "item":"item",
+                    "value":"value"
+                 }
+              }
+           },
+           "fields":[
+              {
+                 "name":"item",
+                 "type":"item",
+                 "value":"value"
+              },
+              {
+                 "name":"value",
+                 "type":"rgb",
+                 "editable": true,
+                 "value": {
+                    "wwhite":10,
+                    "cwhite":10,
+                    "red":10,
+                    "green":10,
+                    "blue":10
+                }
+              }
+           ]
+        },
+        {
+            "item_filter": {
+                 "names":["dimmer", "meter"]
+            },
+           "label": {
+                "lang_tag": "ui7_token",
+                "text": "English string"
+           },
+           "blockType":"when",
+           "blockOptions":{
+              "method":{
+                 "name":"isItemState",
+                 "args":{
+                    "item":"item",
+                    "value":"value"
+                 }
+              }
+           },
+           "fields":[
+              {
+                 "name":"item",
+                 "type":"item",
+                 "value":"value"
+              },
+              {
+                 "name":"value",
+                 "type":"button_state",
+                 "options":[
+                    {
+                       "value": {
+                           "button_number": 1,
+                           "button_state": "released"
+                       },
+                       "label": {
+                           "lang_tag": "ui7_token",
+                           "text": "English string"
+                        }
+                    },
+                    {
+                       "value":{
+                           "button_number": 2,
+                           "button_state": "released"
+                       },
+                       "label": {
+                           "lang_tag": "ui7_token",
+                           "text": "English string"
+                       }
+                    }
+                 ],
+                 "value": {
+                     "button_number": 1,
+                     "button_state": "released"
+                 }
+              }
+           ]
+        },
+        {
+            "item_filter": {
+                 "names":["dimmer", "meter"]
+            },
+           "label": {
+                "lang_tag": "ui7_token",
+                "text": "English string"
+           },
+           "blockType":"when",
+           "blockOptions":{
+              "method":{
+                 "name":"compareNumbers",
+                 "args":{
+                    "item":"item",
+                    "comparator":"comparator",
+                    "value":"value"
+                 }
+              }
+           },
+           "fields":[
+              {
+                 "name":"item",
+                 "type":"item",
+                 "value":"value"
+              },
+              {
+                 "name":"comparator",
+                 "type":"string",
+                 "options":[
+                    {
+                       "value":"==",
+                       "label": {
+                           "lang_tag": "ui7_token",
+                           "text": "English string"
+                       }
+                    },
+                    {
+                       "value":"!=",
+                       "label": {
+                           "lang_tag": "ui7_token",
+                           "text": "English string"
+                       }
+                    },
+                    {
+                       "value":">",
+                       "label": {
+                           "lang_tag": "ui7_token",
+                           "text": "English string"
+                       }
+                    },
+                    {
+                       "value":"<",
+                       "label": {
+                           "lang_tag": "ui7_token",
+                           "text": "English string"
+                       }
+                    },
+                    {
+                       "value":">=",
+                       "label": {
+                           "lang_tag": "ui7_token",
+                           "text": "English string"
+                       }
+                    },
+                    {
+                       "value":"<=",
+                       "label": {
+                           "lang_tag": "ui7_token",
+                           "text": "English string"
+                       }
+                    }
+                 ],
+                 "value": "=="
+              },
+              {
+                 "name":"value",
+                 "editable": true,
+                 "type":"float",
+                 "value":33.3
+              }
+           ]
+        },
+        {
+            "item_filter": {
+                 "names":["dimmer", "meter"]
+            },
+           "label": {
+                "lang_tag": "ui7_token",
+                "text": "English string"
+           },
+           "blockType":"when",
+           "blockOptions":{
+              "method":{
+                 "name":"isItemState",
+                 "args":{
+                    "item":"item",
+                    "value":"value",
+                    "armed":"armed"
+                 }
+              }
+           },
+           "fields":[
+              {
+                 "name":"item",
+                 "type":"item",
+                 "value":"value"
+              },
+              {
+                 "name":"value",
+                 "type":"token",
+                 "options":[
+                    {
+                       "value":"manual_lock_operation",
+                       "label": {
+                           "lang_tag": "ui7_token",
+                           "text": "English string"
+                        }
+                    },
+                    {
+                       "value":"manual_unlock_operation",
+                       "label": {
+                           "lang_tag": "ui7_token",
+                           "text": "English string"
+                       }
+                    }
+                 ],
+                 "value": "manual_unlock_operation"
+              },
+              {
+                 "name":"armed",
+                 "type":"bool",
+                 "value":true
+              }
+           ]
+        }
+
+    ]
+}
