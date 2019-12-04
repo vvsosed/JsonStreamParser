@@ -37,12 +37,17 @@ int main(int argc, char**argv) {
 	//openFileForReading(file1, JS_FILE1);
 	//openFileForReading(file2, JS_FILE2);
 
-	auto fStream1 = createReadFileStream(JS_FILE1);
+	//auto fStream1 = createReadFileStream(JS_FILE1);
 	auto fStream2 = createReadFileStream(JS_FILE2);
 
-	outputStream(*fStream1);
-	fStream1->reset();
-	jstest::processStreamWithCommonJsParser(*fStream1);
+	//outputStream(*fStream1);
+	//fStream1->reset();
+	//jstest::processStreamWithCommonJsParser(*fStream1);
+
+	//outputStream(*fStream2);
+	fStream2->reset();
+	//jstest::processStreamWithCommonJsParser(*fStream2);
+	jstest::filteringItemsWithCommonJsParser(*fStream2);
 
    return 0; 
 }

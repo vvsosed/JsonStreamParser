@@ -74,7 +74,7 @@ public:
 
     bool isSameInOneCase( const char* token ) const;
 
-    inline unsigned int getCurrentDepth() const {
+    inline auto depth() const {
         return m_depth;
     }
 

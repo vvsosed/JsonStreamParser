@@ -22,7 +22,7 @@ bool TestCommonJsParser::processActiveToken() {
 }
 
 bool TestCommonJsParser::onObjectBegin() {
-	std::cout << "onObjectBegin" << std::endl;
+	std::cout << "onObjectBegin dept=" << depth() << std::endl;
 	return true;
 }
 
@@ -32,7 +32,7 @@ bool TestCommonJsParser::onObjectEnd() {
 }
 
 bool TestCommonJsParser::onArrayBegin() {
-	std::cout << "onArrayBegin" << std::endl;
+	std::cout << "onArrayBegin dept=" << depth() << std::endl;
 	return true;
 }
 
@@ -51,11 +51,87 @@ bool TestCommonJsParser::onNext() {
 	return true;
 }
 
+
+bool ItemFilterParser::processActiveToken() {
+	std::string value = getTokenValue();
+	if (WaitItemFilterFieldKey == m_state) {
+		if ( value == "item_filter") {
+			m_state = WaitNamesFieldKey;
+		}
+	}
+	else if (WaitNamesFieldKey == m_state) {
+		if ( value == "names") {
+			m_state = WaitArrayBegin;
+		}
+	}
+	else if (m_state == ReadItems) {
+		if ( !isQuotedTokenProcessing() ) {
+			return false;
+		}
+		m_currentSet.emplace(std::move(value));
+	}
+	return true;
+}
+
+bool ItemFilterParser::onObjectBegin() {
+	return m_state != ReadItems;
+}
+
+bool ItemFilterParser::onObjectEnd() {
+	return m_state != ReadItems;
+}
+
+bool ItemFilterParser::onArrayBegin() {
+	if (m_state == WaitArrayBegin) {
+		m_state = ReadItems;
+		return true;
+	}
+	return m_state != ReadItems;
+}
+
+bool ItemFilterParser::onArrayEnd() {
+	if (m_state == ReadItems) {
+		m_state = WaitItemFilterFieldKey;
+		m_dataList.emplace_back(std::move(m_currentSet));
+		m_currentSet = TokensSet();
+	}
+	return true;
+}
+
+bool ItemFilterParser::onLongToken() {
+	return true;
+}
+
+bool ItemFilterParser::onNext() {
+	return true;
+}
+
+void ItemFilterParser::printResult() {
+	int counter = 0;
+	for(const auto& itemsSet : m_dataList) {
+		std::cout << "template " << ++counter << std::endl;
+		for (const auto& item : itemsSet) {
+			std::cout << item << ",";
+		}
+		std::cout << "\n-------------------------------" << std::endl;
+	}
+}
+
+
 void processStreamWithCommonJsParser( common::IReadStream& rStream ) {
 	std::cout << "\n---------- Run processStreamWithCommonJsParser ..." << std::endl;
 	TestCommonJsParser testParser;
 	auto isSuccess = testParser.parse(rStream);
 	std::cout << "---------- Complete processStreamWithCommonJsParser: " << (isSuccess ? "ok" : "fail") << ".\n" << std::endl;
+}
+
+void filteringItemsWithCommonJsParser( common::IReadStream& rStream ) {
+	ItemFilterParser itemsParser;
+	auto isSuccess = itemsParser.parse(rStream);
+	if (isSuccess) {
+		itemsParser.printResult();
+	}
+	std::cout << "---------- Complete filteringItemsWithCommonJsParser: " << (isSuccess ? "ok" : "fail") << ".\n" << std::endl;
 }
 
 } // namespace jstest
