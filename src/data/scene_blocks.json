@@ -545,6 +545,114 @@
               }
            ]
         }
-
+    ],
+    
+    "then":[
+        {
+            "item_filter": {
+                 "names":["dimmer", "meter"]
+            },
+            "label": {
+                  "lang_tag": "ui7_token",
+                  "text": "English string"
+            },
+            "blockType":"then",
+            "blockOptions":{
+                "method":{
+                    "name":"isItemState",
+                    "args":{
+                        "item":"item",
+                        "value":"value",
+                        "armed":"armed"
+                    }
+                }
+            },
+            "fields":[
+                {
+                    "name":"item",
+                    "type":"item",
+                    "value":"value"
+                },
+                {
+                    "name":"value",
+                    "type":"token",
+                    "options":[
+                        {
+                            "value":"manual_lock_operation",
+                            "label": {
+                                 "lang_tag": "ui7_token",
+                                 "text": "English string"
+                             }
+                        },
+                        {
+                            "value":"manual_unlock_operation",
+                            "label": {
+                                 "lang_tag": "ui7_token",
+                                 "text": "English string"
+                            }
+                        }
+                    ],
+                    "value": "manual_unlock_operation"
+                },
+                {
+                    "name":"armed",
+                    "type":"bool",
+                    "value":true
+                }
+            ]
+        },
+        {
+            "item_filter": {
+                 "names":["meter"]
+            },
+            "label": {
+                  "lang_tag": "ui7_token",
+                  "text": "English string"
+            },
+            "blockType":"then",
+            "blockOptions":{
+                "method":{
+                    "name":"isItemState",
+                    "args":{
+                        "item":"item",
+                        "value":"value",
+                        "armed":"armed"
+                    }
+                }
+            },
+            "fields":[
+                {
+                    "name":"item",
+                    "type":"item",
+                    "value":"value"
+                },
+                {
+                    "name":"value",
+                    "type":"token",
+                    "options":[
+                        {
+                            "value":"manual_lock_operation",
+                            "label": {
+                                 "lang_tag": "ui7_token",
+                                 "text": "English string"
+                             }
+                        },
+                        {
+                            "value":"manual_unlock_operation",
+                            "label": {
+                                 "lang_tag": "ui7_token",
+                                 "text": "English string"
+                            }
+                        }
+                    ],
+                    "value": "manual_unlock_operation"
+                },
+                {
+                    "name":"armed",
+                    "type":"bool",
+                    "value":true
+                }
+            ]
+        }
     ]
 }

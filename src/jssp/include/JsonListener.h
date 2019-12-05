@@ -9,6 +9,7 @@ using String = std::string;
 
 class JsonListener {
   public:
+    virtual ~JsonListener() {};
     
     virtual void whitespace(char c) {};
   

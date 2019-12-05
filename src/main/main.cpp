@@ -98,10 +98,75 @@ void testJssp1() {
 	jssp::testJsonPrinter(*fStream2);
 }
 
+void testJssp2() {
+	auto fStream = createReadFileStream(JS_FILE2);
+	jssp::ItemsFilterFinder finder("then");
+	jssp::ItemsFilterFinder::DataList dList;
+	bool isSuccess;
+	std::tie(isSuccess, dList) = finder.find(*fStream);
+	for (const auto& data : dList) {
+		std::cout << "start=" << data.m_start
+				  << "  end=" << data.m_end
+				  << "  items=" << data.m_tokens.size()
+				  << std::endl;
+
+		if ( !fStream->reset(data.m_start) ) {
+			std::cerr << "Can't reset stream!" << std::endl;
+			return;
+		}
+
+		auto bytesCount = data.m_end - data.m_start;
+		while( bytesCount-- ) {
+			char ch;
+			if ( !fStream->read(&ch, 1) ) {
+				std::cout << "\nCan't read next char from stream!" << std::endl;
+				return;
+			}
+			std::cout << ch;
+		}
+		std::cout << std::endl;
+	}
+}
+
+void testJssp3() {
+	auto fStream = createReadFileStream(JS_FILE2);
+	jssp::ItemsFilterFinder finder("then");
+	jssp::ItemsFilterFinder::DataList dataList;
+	bool isSuccess;
+	std::tie(isSuccess, dataList) = finder.find(*fStream);
+	if ( !isSuccess ) {
+		std::cerr << "Can't find filter items" << std::endl;
+		return;
+	}
+
+	ConsoleOutputStream ostream;
+	common::JsonStreamGenerator jsGen(ostream);
+	jsGen.writePropertyKey("result") && jsGen.writeOpeningArray();
+
+	std::list<std::string> itemsList({
+		{"dimmer1"},
+		{"dimmer2"},
+		{"dimmer3"},
+		{"dimmer4"},
+		{"meter1"},
+		{"meter2"},
+	});
+
+	jssp::TemplatesGenerator tmplGen(jsGen);
+	if ( !tmplGen.generate(itemsList, dataList, *fStream) ) {
+		std::cerr << "Can't generate json from template properly" << std::endl;
+	}
+	else {
+		jsGen.writeClosingSymbol();
+		jsGen.~JsonStreamGenerator();
+		std::cout << "\nGenerated json successfully!" << std::endl;
+	}
+}
+
 int main(int argc, char**argv) {
 	std::cout << "We need json streaming parser!" << std::endl;
 
-	testJssp1();
+	testJssp3();
 
 	return 0;
 }

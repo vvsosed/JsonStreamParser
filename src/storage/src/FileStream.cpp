@@ -51,8 +51,8 @@ size_t ReadFileStream::size() const {
     return m_file ? 1 : 0;
 }
 
-bool ReadFileStream::reset() {
-	return m_file ? m_file->seek(0, SEEK_SET) : false;
+bool ReadFileStream::reset(unsigned int offset) {
+	return m_file ? m_file->seek(offset, SEEK_SET) : false;
 }
 
 }  // namespace storage

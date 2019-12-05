@@ -143,7 +143,7 @@ public:
         return 0;
     }
 
-    virtual bool reset() {
+    virtual bool reset(unsigned int offset) {
     	return false;
     }
 

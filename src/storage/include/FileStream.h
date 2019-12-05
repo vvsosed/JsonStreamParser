@@ -26,9 +26,9 @@ private:
     File::UPtr m_file;
 };
 
-class ReadFileStream : common::IReadStream {
+class ReadFileStream : public common::IReadStream {
 public:
-    using UPtr = common::IReadStream::UPtr;
+    using UPtr = std::unique_ptr<ReadFileStream>;
 
     static UPtr open( const char* filename );
 
@@ -40,7 +40,11 @@ public:
 
     size_t size() const override;
 
-    bool reset() override;
+    bool reset(unsigned int offset = 0) override;
+
+    auto& file() {
+    	return m_file;
+    }
 
 private:
     File::UPtr m_file;
