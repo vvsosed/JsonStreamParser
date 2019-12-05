@@ -3,6 +3,7 @@
 #include "IWriteStream.h"
 #include "StorageFile.h"
 #include "FileStream.h"
+#include "JsonStreamGenerator.h"
 
 #include "TestCommonJsParser.h"
 
@@ -30,24 +31,69 @@ void outputStream( common::IReadStream& stream ) {
 	std::cout << "\n-------------------- Finish output stream" << std::endl;
 }
 
+void test1() {
+	storage::File file1, file2;
+	openFileForReading(file1, JS_FILE1);
+	openFileForReading(file2, JS_FILE2);
+}
+
+void test2() {
+	auto fStream1 = createReadFileStream(JS_FILE1);
+	auto fStream2 = createReadFileStream(JS_FILE2);
+
+	outputStream(*fStream1);
+	fStream1->reset();
+	jstest::processStreamWithCommonJsParser(*fStream1);
+
+	outputStream(*fStream2);
+	fStream2->reset();
+	jstest::processStreamWithCommonJsParser(*fStream2);
+}
+
+class ConsoleOutputStream : public common::IWriteStream {
+public:
+	std::size_t write( const char* buffer, std::size_t size ) override {
+		auto count = size;
+		while( count-- ) {
+			std::cout << *(buffer++);
+		}
+		return size;
+	}
+
+	bool flush() override {
+		return true;
+	}
+
+	bool close() override {
+		return true;
+	}
+};
+
+void test3() {
+	ConsoleOutputStream ostream;
+	common::JsonStreamGenerator jsGen(ostream);
+
+	jsGen.writeOpeningObject();
+	jsGen.writeProperty("hello", "world");
+	jsGen.writeClosingSymbol();
+	jsGen.writeJsonEnd();
+}
+
+void test4() {
+	auto fStream2 = createReadFileStream(JS_FILE2);
+	auto dataList = jstest::filteringItemsWithCommonJsParser(*fStream2);
+	fStream2->reset();
+
+	ConsoleOutputStream ostream;
+	common::JsonStreamGenerator jsGen(ostream);
+
+	jstest::ScenesTemplatesGenerator tmplGen(jsGen, dataList);
+}
+
 int main(int argc, char**argv) {
 	std::cout << "We need json streaming parser!" << std::endl;
 
-	//storage::File file1, file2;
-	//openFileForReading(file1, JS_FILE1);
-	//openFileForReading(file2, JS_FILE2);
+	test4();
 
-	//auto fStream1 = createReadFileStream(JS_FILE1);
-	auto fStream2 = createReadFileStream(JS_FILE2);
-
-	//outputStream(*fStream1);
-	//fStream1->reset();
-	//jstest::processStreamWithCommonJsParser(*fStream1);
-
-	//outputStream(*fStream2);
-	fStream2->reset();
-	//jstest::processStreamWithCommonJsParser(*fStream2);
-	jstest::filteringItemsWithCommonJsParser(*fStream2);
-
-   return 0; 
+	return 0;
 }

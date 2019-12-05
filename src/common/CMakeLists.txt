@@ -6,6 +6,7 @@ add_library(common STATIC
 	src/IValueVisitor.cpp
 	src/IValue.cpp
 	src/IValueCast.cpp
+	src/JsonStreamGenerator.cpp
 
 	src/values/BoolValue.cpp 
 	src/values/FloatValue.cpp

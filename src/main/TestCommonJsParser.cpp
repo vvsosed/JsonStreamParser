@@ -1,19 +1,17 @@
 #include "TestCommonJsParser.h"
 #include "BlocksAllocator.h"
 #include "IReadStream.h"
+#include "JsonStreamGenerator.h"
 
 #include <iostream>
 
 namespace jstest {
 
 TestCommonJsParser::TestCommonJsParser( const int buffSize )
-: common::JSStreamParser(static_cast<char*>(common::blocks_allocator::allocate(buffSize)), buffSize) {
-	std::cout << "Create TestCommonJsParser instance..." << std::endl;
-}
+: common::JSStreamParser(static_cast<char*>(common::blocks_allocator::allocate(buffSize)), buffSize) {}
 
 TestCommonJsParser::~TestCommonJsParser() {
 	common::blocks_allocator::deallocate(getBuffer());
-	std::cout << "Destroy TestCommonJsParser instance." << std::endl;
 }
 
 bool TestCommonJsParser::processActiveToken() {
@@ -117,6 +115,36 @@ void ItemFilterParser::printResult() {
 	}
 }
 
+ScenesTemplatesGenerator::ScenesTemplatesGenerator( common::JsonStreamGenerator& gen, const DataList& dataList )
+: m_gen(gen), m_dataList(dataList) {}
+
+bool ScenesTemplatesGenerator::processActiveToken() {
+	return true;
+}
+
+bool ScenesTemplatesGenerator::onObjectBegin() {
+	return true;
+}
+
+bool ScenesTemplatesGenerator::onObjectEnd() {
+	return true;
+}
+
+bool ScenesTemplatesGenerator::onArrayBegin() {
+	return true;
+}
+
+bool ScenesTemplatesGenerator::onArrayEnd() {
+	return true;
+}
+
+bool ScenesTemplatesGenerator::onLongToken() {
+	return true;
+}
+
+bool ScenesTemplatesGenerator::onNext() {
+	return true;
+}
 
 void processStreamWithCommonJsParser( common::IReadStream& rStream ) {
 	std::cout << "\n---------- Run processStreamWithCommonJsParser ..." << std::endl;
@@ -125,13 +153,14 @@ void processStreamWithCommonJsParser( common::IReadStream& rStream ) {
 	std::cout << "---------- Complete processStreamWithCommonJsParser: " << (isSuccess ? "ok" : "fail") << ".\n" << std::endl;
 }
 
-void filteringItemsWithCommonJsParser( common::IReadStream& rStream ) {
+ItemFilterParser::DataList filteringItemsWithCommonJsParser( common::IReadStream& rStream ) {
 	ItemFilterParser itemsParser;
 	auto isSuccess = itemsParser.parse(rStream);
 	if (isSuccess) {
 		itemsParser.printResult();
 	}
 	std::cout << "---------- Complete filteringItemsWithCommonJsParser: " << (isSuccess ? "ok" : "fail") << ".\n" << std::endl;
+	return isSuccess ? itemsParser.popDataList() : ItemFilterParser::DataList();
 }
 
 } // namespace jstest
