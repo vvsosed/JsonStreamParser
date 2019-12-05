@@ -1,6 +1,8 @@
 #include <algorithm>
+#include <cmath>
 
 #include "JsonStreamingParser.h"
+#include "IReadStream.h"
 
 namespace jssp {
 
@@ -9,7 +11,7 @@ JsonStreamingParser::JsonStreamingParser() {
 }
 
 void JsonStreamingParser::reset() {
-    state = STATE_START_DOCUMENT;
+    m_state = STATE_START_DOCUMENT;
     bufferPos = 0;
     unicodeEscapeBufferPos = 0;
     unicodeBufferPos = 0;
@@ -27,16 +29,16 @@ void JsonStreamingParser::parse(char c) {
     // thanks:
     // http://stackoverflow.com/questions/16042274/definition-of-whitespace-in-json
     if ((c == ' ' || c == '\t' || c == '\n' || c == '\r')
-        && !(state == STATE_IN_STRING || state == STATE_UNICODE || state == STATE_START_ESCAPE
-            || state == STATE_IN_NUMBER || state == STATE_START_DOCUMENT)) {
+        && !(m_state == STATE_IN_STRING || m_state == STATE_UNICODE || m_state == STATE_START_ESCAPE
+            || m_state == STATE_IN_NUMBER || m_state == STATE_START_DOCUMENT)) {
       return;
     }
-    switch (state) {
+    switch (m_state) {
     case STATE_IN_STRING:
       if (c == '"') {
         endString();
       } else if (c == '\\') {
-        state = STATE_START_ESCAPE;
+        m_state = STATE_START_ESCAPE;
       } else if ((c < 0x1f) || (c == 0x7f)) {
         //throw new RuntimeException("Unescaped control character encountered: " + c + " at position" + characterCounter);
       } else {
@@ -64,7 +66,7 @@ void JsonStreamingParser::parse(char c) {
       if (c != ':') {
         //throw new RuntimeException("Expected ':' after key. Instead got " + c + " at position" + characterCounter);
       }
-      state = STATE_AFTER_KEY;
+      m_state = STATE_AFTER_KEY;
       break;
     case STATE_AFTER_KEY:
       startValue(c);
@@ -89,7 +91,7 @@ void JsonStreamingParser::parse(char c) {
         if (c == '}') {
           endObject();
         } else if (c == ',') {
-          state = STATE_IN_OBJECT;
+          m_state = STATE_IN_OBJECT;
         } else {
           //throw new RuntimeException("Expected ',' or '}' while parsing object. Got: " + c + ". " + characterCounter);
         }
@@ -97,7 +99,7 @@ void JsonStreamingParser::parse(char c) {
         if (c == ']') {
           endArray();
         } else if (c == ',') {
-          state = STATE_IN_ARRAY;
+          m_state = STATE_IN_ARRAY;
         } else {
           //throw new RuntimeException("Expected ',' or ']' while parsing array. Got: " + c + ". " + characterCounter);
 
@@ -180,6 +182,13 @@ void JsonStreamingParser::parse(char c) {
     characterCounter++;
   }
 
+void JsonStreamingParser::parse(common::IReadStream& rStream) {
+	char ch;
+	while( rStream.read(&ch, 1) ) {
+		parse(ch);
+	}
+}
+
 void JsonStreamingParser::increaseBufferPointer() {
   bufferPos = std::min(bufferPos + 1, BUFFER_MAX_LENGTH - 1);
 }
@@ -190,11 +199,11 @@ void JsonStreamingParser::endString() {
     if (popped == STACK_KEY) {
       buffer[bufferPos] = '\0';
       myListener->key(String(buffer));
-      state = STATE_END_KEY;
+      m_state = STATE_END_KEY;
     } else if (popped == STACK_STRING) {
       buffer[bufferPos] = '\0';
       myListener->value(String(buffer));
-      state = STATE_AFTER_VALUE;
+      m_state = STATE_AFTER_VALUE;
     } else {
       // throw new ParsingError($this->_line_number, $this->_char_number,
       // "Unexpected end of string.");
@@ -211,15 +220,15 @@ void JsonStreamingParser::startValue(char c) {
     } else if (isDigit(c)) {
       startNumber(c);
     } else if (c == 't') {
-      state = STATE_IN_TRUE;
+      m_state = STATE_IN_TRUE;
       buffer[bufferPos] = c;
       increaseBufferPointer();
     } else if (c == 'f') {
-      state = STATE_IN_FALSE;
+      m_state = STATE_IN_FALSE;
       buffer[bufferPos] = c;
       increaseBufferPointer();
     } else if (c == 'n') {
-      state = STATE_IN_NULL;
+      m_state = STATE_IN_NULL;
       buffer[bufferPos] = c;
       increaseBufferPointer();
     } else {
@@ -241,7 +250,7 @@ void JsonStreamingParser::endArray() {
       // "Unexpected end of array encountered.");
     }
     myListener->endArray();
-    state = STATE_AFTER_VALUE;
+    m_state = STATE_AFTER_VALUE;
     if (stackPos == 0) {
       endDocument();
     }
@@ -250,7 +259,7 @@ void JsonStreamingParser::endArray() {
 void JsonStreamingParser::startKey() {
     stack[stackPos] = STACK_KEY;
     stackPos++;
-    state = STATE_IN_STRING;
+    m_state = STATE_IN_STRING;
   }
 
 void JsonStreamingParser::endObject() {
@@ -261,7 +270,7 @@ void JsonStreamingParser::endObject() {
       // "Unexpected end of object encountered.");
     }
     myListener->endObject();
-    state = STATE_AFTER_VALUE;
+    m_state = STATE_AFTER_VALUE;
     if (stackPos == 0) {
       endDocument();
     }
@@ -293,13 +302,13 @@ void JsonStreamingParser::processEscapeCharacters(char c) {
       buffer[bufferPos] = '\t';
       increaseBufferPointer();
     } else if (c == 'u') {
-      state = STATE_UNICODE;
+      m_state = STATE_UNICODE;
     } else {
       // throw new ParsingError($this->_line_number, $this->_char_number,
       // "Expected escaped character after backslash. Got: ".$c);
     }
-    if (state != STATE_UNICODE) {
-      state = STATE_IN_STRING;
+    if (m_state != STATE_UNICODE) {
+      m_state = STATE_IN_STRING;
     }
   }
 
@@ -378,22 +387,26 @@ void JsonStreamingParser::endUnicodeSurrogateInterstitial() {
     }
     unicodeBufferPos = 0;
     unicodeEscapeBufferPos = 0;
-    state = STATE_UNICODE;
+    m_state = STATE_UNICODE;
   }
 
 void JsonStreamingParser::endNumber() {
     buffer[bufferPos] = '\0';
     String value = String(buffer);
-    //float result = 0.0;
-    //if (doesCharArrayContain(buffer, bufferPos, '.')) {
-    //  result = value.toFloat();
-    //} else {
-      // needed special treatment in php, maybe not in Java and c
-    //  result = value.toFloat();
-    //}
-    myListener->value(value.c_str());
+    {
+    	std::string::size_type sz;
+    	int ival = std::stoi (value, &sz);
+    	if (sz == value.length()) {
+    		myListener->value(ival);
+    	}
+    	else {
+    		float fval = std::stof (value, &sz);
+    		myListener->value(fval);
+    	}
+    }
+
     bufferPos = 0;
-    state = STATE_AFTER_VALUE;
+    m_state = STATE_AFTER_VALUE;
   }
 
 int JsonStreamingParser::convertDecimalBufferToInt(char myArray[], int length) {
@@ -407,58 +420,58 @@ int JsonStreamingParser::convertDecimalBufferToInt(char myArray[], int length) {
 
 void JsonStreamingParser::endDocument() {
     myListener->endDocument();
-    state = STATE_DONE;
+    m_state = STATE_DONE;
   }
 
 void JsonStreamingParser::endTrue() {
     buffer[bufferPos] = '\0';
     String value = String(buffer);
     if (value == "true") {
-      myListener->value("true");
+      myListener->value(true);
     } else {
       // throw new ParsingError($this->_line_number, $this->_char_number,
       // "Expected 'true'. Got: ".$true);
     }
     bufferPos = 0;
-    state = STATE_AFTER_VALUE;
+    m_state = STATE_AFTER_VALUE;
   }
 
 void JsonStreamingParser::endFalse() {
     buffer[bufferPos] = '\0';
     String value = String(buffer);
     if (value == "false") {
-      myListener->value("false");
+      myListener->value(false);
     } else {
       // throw new ParsingError($this->_line_number, $this->_char_number,
       // "Expected 'true'. Got: ".$true);
     }
     bufferPos = 0;
-    state = STATE_AFTER_VALUE;
+    m_state = STATE_AFTER_VALUE;
   }
 
 void JsonStreamingParser::endNull() {
     buffer[bufferPos] = '\0';
     String value = String(buffer);
     if (value == "null") {
-      myListener->value("null");
+      myListener->value(nullptr);
     } else {
       // throw new ParsingError($this->_line_number, $this->_char_number,
       // "Expected 'true'. Got: ".$true);
     }
     bufferPos = 0;
-    state = STATE_AFTER_VALUE;
+    m_state = STATE_AFTER_VALUE;
   }
 
 void JsonStreamingParser::startArray() {
     myListener->startArray();
-    state = STATE_IN_ARRAY;
+    m_state = STATE_IN_ARRAY;
     stack[stackPos] = STACK_ARRAY;
     stackPos++;
   }
 
 void JsonStreamingParser::startObject() {
     myListener->startObject();
-    state = STATE_IN_OBJECT;
+    m_state = STATE_IN_OBJECT;
     stack[stackPos] = STACK_OBJECT;
     stackPos++;
   }
@@ -466,11 +479,11 @@ void JsonStreamingParser::startObject() {
 void JsonStreamingParser::startString() {
     stack[stackPos] = STACK_STRING;
     stackPos++;
-    state = STATE_IN_STRING;
+    m_state = STATE_IN_STRING;
   }
 
 void JsonStreamingParser::startNumber(char c) {
-    state = STATE_IN_NUMBER;
+    m_state = STATE_IN_NUMBER;
     buffer[bufferPos] = c;
     increaseBufferPointer();
   }
@@ -480,7 +493,7 @@ void JsonStreamingParser::endUnicodeCharacter(int codepoint) {
     increaseBufferPointer();
     unicodeBufferPos = 0;
     unicodeHighSurrogate = -1;
-    state = STATE_IN_STRING;
+    m_state = STATE_IN_STRING;
   }
 
 char JsonStreamingParser::convertCodepointToCharacter(int num) {

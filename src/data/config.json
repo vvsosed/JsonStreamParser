@@ -4,5 +4,6 @@
   "type": "extension",
   "sceneBlocks": "templates/scene_blocks.json",
   "permissions": [1,2,3,4,5,6,7],
-  "dependencies": {}
+  "dependencies": {},
+  "float_value": 12.12
 }

@@ -3,6 +3,10 @@
 
 #include "JsonListener.h"
 
+namespace common {
+class IReadStream;
+} // namespace common
+
 namespace jssp {
 
 using boolean = bool;
@@ -34,7 +38,7 @@ class JsonStreamingParser {
   private:
 
 
-    int state;
+    int m_state;
     int stack[20];
     int stackPos = 0;
     JsonListener* myListener;
@@ -108,9 +112,22 @@ class JsonStreamingParser {
 
   public:
     JsonStreamingParser();
+
     void parse(char c);
+
+    void parse(common::IReadStream& rStream);
+
     void setListener(JsonListener* listener);
+
     void reset();
+
+    inline int depth() const {
+    	return stackPos;
+    }
+
+    inline int state() const {
+    	return m_state;
+    }
 };
 
 } // namespace jssp

@@ -10,23 +10,31 @@ using String = std::string;
 class JsonListener {
   public:
     
-    virtual void whitespace(char c) = 0;
+    virtual void whitespace(char c) {};
   
-    virtual void startDocument() = 0;
+    virtual void startDocument() {};
 
-    virtual void key(String key) = 0;
+    virtual void key(String key) {};
 
-    virtual void value(String value) = 0;
+    virtual void value(String value) {};
 
-    virtual void endArray() = 0;
+    virtual void value(int value) {};
 
-    virtual void endObject() = 0;
+    virtual void value(float value) {};
 
-    virtual void endDocument() = 0;
+    virtual void value(bool value) {};
 
-    virtual void startArray() = 0;
+    virtual void value(std::nullptr_t) {};
 
-    virtual void startObject() = 0;
+    virtual void endArray() {};
+
+    virtual void endObject() {};
+
+    virtual void endDocument() {};
+
+    virtual void startArray() {};
+
+    virtual void startObject() {};
 };
 
 } // namespace jssp

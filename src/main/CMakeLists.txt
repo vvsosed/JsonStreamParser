@@ -1,6 +1,7 @@
 set(MAIN_SRC
     main.cpp
-	TestCommonJsParser.cpp )
+	TestCommonJsParser.cpp
+	TestJssParser.cpp )
 
 add_executable(main ${MAIN_SRC})
 

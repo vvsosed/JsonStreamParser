@@ -6,6 +6,7 @@
 #include "JsonStreamGenerator.h"
 
 #include "TestCommonJsParser.h"
+#include "TestJssParser.h"
 
 const char JS_FILE1[] = "/home/volodymyr/Documents/repo/JsonStreamParser/src/data/config.json";
 const char JS_FILE2[] = "/home/volodymyr/Documents/repo/JsonStreamParser/src/data/scene_blocks.json";
@@ -90,10 +91,17 @@ void test4() {
 	jstest::ScenesTemplatesGenerator tmplGen(jsGen, dataList);
 }
 
+void testJssp1() {
+	auto fStream1 = createReadFileStream(JS_FILE1);
+	jssp::testJsonPrinter(*fStream1);
+	auto fStream2 = createReadFileStream(JS_FILE2);
+	jssp::testJsonPrinter(*fStream2);
+}
+
 int main(int argc, char**argv) {
 	std::cout << "We need json streaming parser!" << std::endl;
 
-	test4();
+	testJssp1();
 
 	return 0;
 }
