@@ -6,34 +6,23 @@
 namespace common {
 
 template <typename T>
-class StlBlockAllocator {
+class StlBlockAllocator : public std::allocator<T> {
 public:
-    typedef size_t size_type;
-    typedef ptrdiff_t difference_type;
-    typedef T* pointer;
-    typedef const T* const_pointer;
-    typedef T& reference;
-    typedef const T& const_reference;
-    typedef T value_type;
+    using Base = std::allocator<T>;
+	using typename Base::size_type;
+	using typename Base::difference_type;
+	using typename Base::pointer;
+	using typename Base::const_pointer;
+	using typename Base::reference;
+	using typename Base::const_reference;
+	using typename Base::value_type;
 
-    StlBlockAllocator() = default;
-    StlBlockAllocator( const StlBlockAllocator<T>& ) = default;
-    ~StlBlockAllocator() = default;
+    using Base::Base; // Just use constructors from base class
 
-    template <class U>
-    StlBlockAllocator( const StlBlockAllocator<U>& ){};
     template <class U>
     struct rebind {
         typedef StlBlockAllocator<U> other;
     };
-
-    pointer address( reference ref ) const {
-        return &ref;
-    }
-
-    const_pointer address( const_reference ref ) const {
-        return &ref;
-    }
 
     pointer allocate( size_type n, const void* = NULL ) {
         return static_cast<pointer>( common::blocks_allocator::allocate( n * sizeof( T ) ) );
@@ -41,16 +30,6 @@ public:
 
     void deallocate( pointer ptr, size_type n ) {
         common::blocks_allocator::deallocate( static_cast<void*>( ptr ) );
-    }
-
-    template <typename _Up, typename... _Args>
-    void construct( _Up* ptr, _Args&&... args ) {
-        ::new( static_cast<void*>( ptr ) ) _Up( std::forward<_Args>( args )... );
-    }
-
-    template <typename _Up>
-    void destroy( _Up* ptr ) {
-        ptr->~_Up();
     }
 };
 
