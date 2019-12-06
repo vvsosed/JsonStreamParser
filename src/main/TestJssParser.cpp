@@ -7,7 +7,7 @@
 
 namespace jssp {
 
-JsonPrinter::JsonPrinter( const JsonStreamingParser& parser )
+JsonPrinter::JsonPrinter( const Parser& parser )
 : m_parser(parser) {}
 
 void JsonPrinter::key(String key) {
@@ -65,7 +65,7 @@ void JsonPrinter::endObject() {
 
 void testJsonPrinter( common::IReadStream& rStream ) {
 	std::cout << "\n---------- Run testJsonPrinter ..." << std::endl;
-	JsonStreamingParser jsParser;
+	JsonStreamingParser<std::string> jsParser;
 	JsonPrinter jsPrinter(jsParser);
 	jsParser.setListener(&jsPrinter);
 	jsParser.parse(rStream);
@@ -75,8 +75,10 @@ void testJsonPrinter( common::IReadStream& rStream ) {
 
 namespace {
 
-class ItemsFilterFinderStateBase : public JsonListener {
+class ItemsFilterFinderStateBase : public ItemsFilterFinder::ParserListener {
 public:
+	using String = ItemsFilterFinder::String;
+
 	ItemsFilterFinderStateBase( ItemsFilterFinder* finder )
 	: m_finder(*finder) {}
 
@@ -428,7 +430,7 @@ void TemplatesGenerator::startObject() {
 	m_isSuccess = m_gen.writeOpeningObject();
 };
 
-bool TemplatesGenerator::generate( const std::list<std::string> itemsList,
+bool TemplatesGenerator::generate( const ItemsList& itemsList,
 		                           const DataList& dataList,
 								   common::IReadStream& rStream ) {
 	for (const auto& item : itemsList) {

@@ -1,15 +1,14 @@
 
 #pragma once
 
-#include <string>
+#include <cstddef>
 
 namespace jssp {
 
-using String = std::string;
-
-class JsonListener {
+template<typename String>
+class JsonListenerBase {
   public:
-    virtual ~JsonListener() {};
+    virtual ~JsonListenerBase() {};
     
     virtual void whitespace(char c) {};
   

@@ -2,14 +2,15 @@
 
 #include <string>
 #include <list>
-#include <StlBlockAllocator.h>
 #include <functional>
 #include <map>
 #include <set>
 
+#include "StlBlockAllocator.h"
+
 namespace common {
 
-typedef std::basic_string<char, std::char_traits<char>, common::StlBlockAllocator<char>> block_string;
+using block_string = std::basic_string<char, std::char_traits<char>, common::StlBlockAllocator<char>>;
 
 template <typename T>
 struct hash;
@@ -40,3 +41,4 @@ class block_set : public std::set<_Key, _Compare, _Alloc> {
 };
 
 }  // end of namespace common
+

@@ -34,30 +34,8 @@ using boolean = bool;
 
 #define BUFFER_MAX_LENGTH  512
 
+template <typename String>
 class JsonStreamingParser {
-  private:
-
-
-    int m_state;
-    int stack[20];
-    int stackPos = 0;
-    JsonListener* myListener;
-
-    boolean doEmitWhitespace = false;
-    // fixed length buffer array to prepare for c code
-    char buffer[BUFFER_MAX_LENGTH];
-    int bufferPos = 0;
-
-    char unicodeEscapeBuffer[10];
-    int unicodeEscapeBufferPos = 0;
-
-    char unicodeBuffer[10];
-    int unicodeBufferPos = 0;
-
-    int characterCounter = 0;
-
-    int unicodeHighSurrogate = 0;
-
     void increaseBufferPointer();
 
     void endString();
@@ -108,9 +86,10 @@ class JsonStreamingParser {
 
     void endObject();
 
-
-
   public:
+    using StringType = String;
+    using JsonListener = JsonListenerBase<StringType>;
+
     JsonStreamingParser();
 
     void parse(char c);
@@ -128,6 +107,27 @@ class JsonStreamingParser {
     inline int state() const {
     	return m_state;
     }
+
+private:
+    int m_state;
+	int stack[20];
+	int stackPos = 0;
+	JsonListener* myListener;
+
+	boolean doEmitWhitespace = false;
+	// fixed length buffer array to prepare for c code
+	char buffer[BUFFER_MAX_LENGTH];
+	int bufferPos = 0;
+
+	char unicodeEscapeBuffer[10];
+	int unicodeEscapeBufferPos = 0;
+
+	char unicodeBuffer[10];
+	int unicodeBufferPos = 0;
+
+	int characterCounter = 0;
+
+	int unicodeHighSurrogate = 0;
 };
 
 } // namespace jssp

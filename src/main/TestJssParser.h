@@ -1,11 +1,11 @@
 #pragma once
 
 #include "JsonStreamingParser.h"
-#include "JsonListener.h"
 #include "StlBlockTypes.h"
 
 #include <tuple>
 #include <memory>
+#include <string>
 
 namespace common {
 class IReadStream;
@@ -14,11 +14,12 @@ class JsonStreamGenerator;
 
 namespace jssp {
 
-class JsonPrinter : public JsonListener {
-	String m_prefix;
-	const JsonStreamingParser& m_parser;
+class JsonPrinter : public JsonStreamingParser<std::string>::JsonListener {
 public:
-	JsonPrinter( const JsonStreamingParser& parser );
+	using Parser = JsonStreamingParser<std::string>;
+	using String = Parser::StringType;
+
+	JsonPrinter( const Parser& parser );
 
 	void key(String key) override;
 
@@ -39,13 +40,20 @@ public:
 	void startArray() override;
 
 	void startObject() override;
+
+private:
+	String m_prefix;
+	const Parser& m_parser;
 };
 
 void testJsonPrinter( common::IReadStream& rStream );
 
 class ItemsFilterFinder {
 public:
-	using TokenType = std::string;
+	//using String = std::string;
+	using String = common::block_string;
+
+	using TokenType = String;
 	using TokensSet = common::block_set<TokenType>;
 	struct BlockData {
 		int m_start = -1, m_end = -1,
@@ -67,7 +75,9 @@ public:
 
 	using DataList = common::block_list<BlockData>;
 
-	using StateUPtr = std::unique_ptr<JsonListener>;
+	using Parser = JsonStreamingParser<String>;
+	using ParserListener = Parser::JsonListener;
+	using StateUPtr = std::unique_ptr<ParserListener>;
 
 	enum class State {
 		InWork,
@@ -121,17 +131,22 @@ private:
 		m_pos = 0;
 	BlockData m_bData;
 	DataList m_dataList;
-	JsonStreamingParser m_parser;
+	Parser m_parser;
 
 	StateUPtr m_state2;
 };
 
-class TemplatesGenerator : public JsonListener {
+class TemplatesGenerator : public JsonListenerBase<ItemsFilterFinder::String> {
 public:
 	using TokenType = ItemsFilterFinder::TokenType;
 	using TokensSet = ItemsFilterFinder::TokensSet;
 	using BlockData = ItemsFilterFinder::BlockData;
 	using DataList = ItemsFilterFinder::DataList;
+
+	using String = ItemsFilterFinder::String;
+	using Parser = JsonStreamingParser<String>;
+
+	using ItemsList = common::block_list<String>;
 
 	TemplatesGenerator( common::JsonStreamGenerator& gen );
 
@@ -155,7 +170,7 @@ public:
 
 	void startObject() override;
 
-	bool generate( const std::list<std::string> itemsList,
+	bool generate( const ItemsList& itemsList,
 			       const DataList& dataList,
 				   common::IReadStream& rStream );
 
@@ -169,7 +184,7 @@ private:
 	String m_currItem;
 	String m_key;
 	common::JsonStreamGenerator& m_gen;
-	JsonStreamingParser m_parser;
+	Parser m_parser;
 };
 
 } // namespace jssp

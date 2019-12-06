@@ -1,16 +1,20 @@
 #include <algorithm>
 #include <cmath>
+#include <string>
 
 #include "JsonStreamingParser.h"
 #include "IReadStream.h"
+#include "StlBlockTypes.h"
 
 namespace jssp {
 
-JsonStreamingParser::JsonStreamingParser() {
+template <typename String>
+JsonStreamingParser<String>::JsonStreamingParser() {
     reset();
 }
 
-void JsonStreamingParser::reset() {
+template <typename String>
+void JsonStreamingParser<String>::reset() {
     m_state = STATE_START_DOCUMENT;
     bufferPos = 0;
     unicodeEscapeBufferPos = 0;
@@ -18,11 +22,13 @@ void JsonStreamingParser::reset() {
     characterCounter = 0;
 }
 
-void JsonStreamingParser::setListener(JsonListener* listener) {
+template <typename String>
+void JsonStreamingParser<String>::setListener(JsonListener* listener) {
   myListener = listener;
 }
 
-void JsonStreamingParser::parse(char c) {
+template <typename String>
+void JsonStreamingParser<String>::parse(char c) {
     //System.out.print(c);
     // valid whitespace characters in JSON (from RFC4627 for JSON) include:
     // space, horizontal tab, line feed or new line, and carriage return.
@@ -182,27 +188,30 @@ void JsonStreamingParser::parse(char c) {
     characterCounter++;
   }
 
-void JsonStreamingParser::parse(common::IReadStream& rStream) {
+template <typename String>
+void JsonStreamingParser<String>::parse(common::IReadStream& rStream) {
 	char ch;
 	while( rStream.read(&ch, 1) ) {
 		parse(ch);
 	}
 }
 
-void JsonStreamingParser::increaseBufferPointer() {
+template <typename String>
+void JsonStreamingParser<String>::increaseBufferPointer() {
   bufferPos = std::min(bufferPos + 1, BUFFER_MAX_LENGTH - 1);
 }
 
-void JsonStreamingParser::endString() {
+template <typename String>
+void JsonStreamingParser<String>::endString() {
     int popped = stack[stackPos - 1];
     stackPos--;
     if (popped == STACK_KEY) {
       buffer[bufferPos] = '\0';
-      myListener->key(String(buffer));
+      myListener->key(StringType(buffer));
       m_state = STATE_END_KEY;
     } else if (popped == STACK_STRING) {
       buffer[bufferPos] = '\0';
-      myListener->value(String(buffer));
+      myListener->value(StringType(buffer));
       m_state = STATE_AFTER_VALUE;
     } else {
       // throw new ParsingError($this->_line_number, $this->_char_number,
@@ -210,7 +219,9 @@ void JsonStreamingParser::endString() {
     }
     bufferPos = 0;
   }
-void JsonStreamingParser::startValue(char c) {
+
+template <typename String>
+void JsonStreamingParser<String>::startValue(char c) {
     if (c == '[') {
       startArray();
     } else if (c == '{') {
@@ -237,12 +248,14 @@ void JsonStreamingParser::startValue(char c) {
     }
   }
 
-boolean JsonStreamingParser::isDigit(char c) {
+template <typename String>
+boolean JsonStreamingParser<String>::isDigit(char c) {
     // Only concerned with the first character in a number.
     return (c >= '0' && c <= '9') || c == '-';
   }
 
-void JsonStreamingParser::endArray() {
+template <typename String>
+void JsonStreamingParser<String>::endArray() {
     int popped = stack[stackPos - 1];
     stackPos--;
     if (popped != STACK_ARRAY) {
@@ -256,13 +269,15 @@ void JsonStreamingParser::endArray() {
     }
   }
 
-void JsonStreamingParser::startKey() {
+template <typename String>
+void JsonStreamingParser<String>::startKey() {
     stack[stackPos] = STACK_KEY;
     stackPos++;
     m_state = STATE_IN_STRING;
   }
 
-void JsonStreamingParser::endObject() {
+template <typename String>
+void JsonStreamingParser<String>::endObject() {
     int popped = stack[stackPos];
     stackPos--;
     if (popped != STACK_OBJECT) {
@@ -276,7 +291,8 @@ void JsonStreamingParser::endObject() {
     }
   }
 
-void JsonStreamingParser::processEscapeCharacters(char c) {
+template <typename String>
+void JsonStreamingParser<String>::processEscapeCharacters(char c) {
     if (c == '"') {
       buffer[bufferPos] = '"';
       increaseBufferPointer();
@@ -312,7 +328,8 @@ void JsonStreamingParser::processEscapeCharacters(char c) {
     }
   }
 
-void JsonStreamingParser::processUnicodeCharacter(char c) {
+template <typename String>
+void JsonStreamingParser<String>::processUnicodeCharacter(char c) {
     if (!isHexCharacter(c)) {
       // throw new ParsingError($this->_line_number, $this->_char_number,
       // "Expected hex character for escaped Unicode character. Unicode parsed: "
@@ -348,11 +365,14 @@ void JsonStreamingParser::processUnicodeCharacter(char c) {
       }*/
     }
   }
-boolean JsonStreamingParser::isHexCharacter(char c) {
+
+template <typename String>
+boolean JsonStreamingParser<String>::isHexCharacter(char c) {
     return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
   }
 
-int JsonStreamingParser::getHexArrayAsDecimal(char hexArray[], int length) {
+template <typename String>
+int JsonStreamingParser<String>::getHexArrayAsDecimal(char hexArray[], int length) {
     int result = 0;
     for (int i = 0; i < length; i++) {
       char current = hexArray[length - i - 1];
@@ -369,7 +389,8 @@ int JsonStreamingParser::getHexArrayAsDecimal(char hexArray[], int length) {
     return result;
   }
 
-boolean JsonStreamingParser::doesCharArrayContain(char myArray[], int length, char c) {
+template <typename String>
+boolean JsonStreamingParser<String>::doesCharArrayContain(char myArray[], int length, char c) {
     for (int i = 0; i < length; i++) {
       if (myArray[i] == c) {
         return true;
@@ -378,7 +399,8 @@ boolean JsonStreamingParser::doesCharArrayContain(char myArray[], int length, ch
     return false;
   }
 
-void JsonStreamingParser::endUnicodeSurrogateInterstitial() {
+template <typename String>
+void JsonStreamingParser<String>::endUnicodeSurrogateInterstitial() {
     char unicodeEscape = unicodeEscapeBuffer[unicodeEscapeBufferPos - 1];
     if (unicodeEscape != 'u') {
       // throw new ParsingError($this->_line_number, $this->_char_number,
@@ -390,17 +412,21 @@ void JsonStreamingParser::endUnicodeSurrogateInterstitial() {
     m_state = STATE_UNICODE;
   }
 
-void JsonStreamingParser::endNumber() {
+template <typename String>
+void JsonStreamingParser<String>::endNumber() {
     buffer[bufferPos] = '\0';
-    String value = String(buffer);
+    StringType value = StringType(buffer);
     {
-    	std::string::size_type sz;
-    	int ival = std::stoi (value, &sz);
+
+    	const char *cstrBegin = value.c_str();
+    	char *cstrEnd;
+    	int ival = std::strtol (cstrBegin, &cstrEnd, 10);
+    	typename String::size_type sz = cstrEnd - cstrBegin;
     	if (sz == value.length()) {
     		myListener->value(ival);
     	}
     	else {
-    		float fval = std::stof (value, &sz);
+    		float fval = std::strtof (cstrBegin, &cstrEnd);
     		myListener->value(fval);
     	}
     }
@@ -409,7 +435,8 @@ void JsonStreamingParser::endNumber() {
     m_state = STATE_AFTER_VALUE;
   }
 
-int JsonStreamingParser::convertDecimalBufferToInt(char myArray[], int length) {
+template <typename String>
+int JsonStreamingParser<String>::convertDecimalBufferToInt(char myArray[], int length) {
     int result = 0;
     for (int i = 0; i < length; i++) {
       char current = myArray[length - i - 1];
@@ -418,14 +445,16 @@ int JsonStreamingParser::convertDecimalBufferToInt(char myArray[], int length) {
     return result;
   }
 
-void JsonStreamingParser::endDocument() {
+template <typename String>
+void JsonStreamingParser<String>::endDocument() {
     myListener->endDocument();
     m_state = STATE_DONE;
   }
 
-void JsonStreamingParser::endTrue() {
+template <typename String>
+void JsonStreamingParser<String>::endTrue() {
     buffer[bufferPos] = '\0';
-    String value = String(buffer);
+    StringType value = StringType(buffer);
     if (value == "true") {
       myListener->value(true);
     } else {
@@ -436,9 +465,10 @@ void JsonStreamingParser::endTrue() {
     m_state = STATE_AFTER_VALUE;
   }
 
-void JsonStreamingParser::endFalse() {
+template <typename String>
+void JsonStreamingParser<String>::endFalse() {
     buffer[bufferPos] = '\0';
-    String value = String(buffer);
+    StringType value = StringType(buffer);
     if (value == "false") {
       myListener->value(false);
     } else {
@@ -449,9 +479,10 @@ void JsonStreamingParser::endFalse() {
     m_state = STATE_AFTER_VALUE;
   }
 
-void JsonStreamingParser::endNull() {
+template <typename String>
+void JsonStreamingParser<String>::endNull() {
     buffer[bufferPos] = '\0';
-    String value = String(buffer);
+    StringType value = StringType(buffer);
     if (value == "null") {
       myListener->value(nullptr);
     } else {
@@ -462,33 +493,38 @@ void JsonStreamingParser::endNull() {
     m_state = STATE_AFTER_VALUE;
   }
 
-void JsonStreamingParser::startArray() {
+template <typename String>
+void JsonStreamingParser<String>::startArray() {
     myListener->startArray();
     m_state = STATE_IN_ARRAY;
     stack[stackPos] = STACK_ARRAY;
     stackPos++;
   }
 
-void JsonStreamingParser::startObject() {
+template <typename String>
+void JsonStreamingParser<String>::startObject() {
     myListener->startObject();
     m_state = STATE_IN_OBJECT;
     stack[stackPos] = STACK_OBJECT;
     stackPos++;
   }
 
-void JsonStreamingParser::startString() {
+template <typename String>
+void JsonStreamingParser<String>::startString() {
     stack[stackPos] = STACK_STRING;
     stackPos++;
     m_state = STATE_IN_STRING;
   }
 
-void JsonStreamingParser::startNumber(char c) {
+template <typename String>
+void JsonStreamingParser<String>::startNumber(char c) {
     m_state = STATE_IN_NUMBER;
     buffer[bufferPos] = c;
     increaseBufferPointer();
   }
 
-void JsonStreamingParser::endUnicodeCharacter(int codepoint) {
+template <typename String>
+void JsonStreamingParser<String>::endUnicodeCharacter(int codepoint) {
     buffer[bufferPos] = convertCodepointToCharacter(codepoint);
     increaseBufferPointer();
     unicodeBufferPos = 0;
@@ -496,7 +532,8 @@ void JsonStreamingParser::endUnicodeCharacter(int codepoint) {
     m_state = STATE_IN_STRING;
   }
 
-char JsonStreamingParser::convertCodepointToCharacter(int num) {
+template <typename String>
+char JsonStreamingParser<String>::convertCodepointToCharacter(int num) {
     if (num <= 0x7F)
       return (char) (num);
     // if(num<=0x7FF) return (char)((num>>6)+192) + (char)((num&63)+128);
@@ -506,5 +543,8 @@ char JsonStreamingParser::convertCodepointToCharacter(int num) {
     // chr((num>>18)+240).chr(((num>>12)&63)+128).chr(((num>>6)&63)+128).chr((num&63)+128);
     return ' ';
   }
+
+template class JsonStreamingParser<std::string>;
+template class JsonStreamingParser<common::block_string>;
 
 } // namespace jssp

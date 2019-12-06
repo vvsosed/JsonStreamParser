@@ -33,17 +33,14 @@ public:
 
     bool writePropertyValue( const char* value );
 
-    bool writePropertyValue( const std::string& value ) {
-        return writePropertyValue( value.c_str(), value.length() );
-    }
-
     bool writeProperty( const char* key, std::uint16_t keySize, const char* value, std::uint16_t valueSize );
 
     bool writeProperty( const char* key, const char* value, std::uint16_t valueSize );
 
     bool writeProperty( const char* key, const char* value );
 
-    bool writeProperty( const char* key, const std::string& value ) {
+    template<class CharT, class Traits, class Allocator>
+    inline bool writeProperty( const char* key, const std::basic_string<CharT, Traits, Allocator>& value ) {
         return writeProperty( key, value.c_str(), value.size() );
     }
 

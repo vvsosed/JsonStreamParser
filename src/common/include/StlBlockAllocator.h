@@ -54,8 +54,6 @@ public:
     }
 };
 
-}  // namespace common
-
 template <typename T>
 bool operator==( const common::StlBlockAllocator<T>& left, const common::StlBlockAllocator<T>& right ) {
     return &left == &right;
@@ -64,3 +62,6 @@ template <typename T>
 bool operator!=( const common::StlBlockAllocator<T>& left, const common::StlBlockAllocator<T>& right ) {
     return &left != &right;
 }
+
+}  // namespace common
+

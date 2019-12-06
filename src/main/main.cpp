@@ -173,7 +173,7 @@ void testJssp4() {
 	common::JsonStreamGenerator jsGen(ostream);
 	jsGen.writePropertyKey("result") && jsGen.writeOpeningArray();
 
-	std::list<std::string> itemsList({
+	jssp::TemplatesGenerator::ItemsList itemsList({
 		{"dimmer1"},
 		{"dimmer2"},
 		{"dimmer3"},
