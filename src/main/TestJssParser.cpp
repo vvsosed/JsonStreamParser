@@ -3,6 +3,7 @@
 #include "JsonStreamGenerator.h"
 
 #include <iostream>
+#include <functional>
 
 namespace jssp {
 
@@ -72,171 +73,241 @@ void testJsonPrinter( common::IReadStream& rStream ) {
 	std::cout << "---------- Complete testJsonPrinter\n" << std::endl;
 }
 
-ItemsFilterFinder::ItemsFilterFinder( const String& field )
-: m_field(field) {
-	m_parser.setListener(this);
+namespace {
+
+class ItemsFilterFinderStateBase : public JsonListener {
+public:
+	ItemsFilterFinderStateBase( ItemsFilterFinder* finder )
+	: m_finder(*finder) {}
+
+	virtual ~ItemsFilterFinderStateBase() = default;
+
+	inline auto& finder() {
+		return m_finder;
+	}
+
+private:
+	ItemsFilterFinder& m_finder;
 };
 
-void ItemsFilterFinder::key(String key) {
-	switch(m_state) {
-	case State::WaitStartOfTemplatesBlock:
-		if (key == m_field) {
-			m_state = State::WaitStartOfBlock;
-			m_blockDept = m_parser.depth() + 1;
-		}
-		break;
-	case State::WaitStartOfBlock:
-		m_state = State::Failed;
-		break;
-	case State::WaitItemFilterFieldKey:
-		if (key == "item_filter") {
-			m_state = State::WaitNamesFieldKey;
-		}
-		break;
-	case State::WaitNamesFieldKey:
-		if ( key == "names") {
-			m_state = State::WaitArrayBegin;
-		}
-		break;
-	case State::WaitArrayBegin:
-		m_state = State::Failed;
-		break;
-	case State::ReadItems:
-		m_state = State::Failed;
-		break;
-	case State::WaitingEndOfBlock:
-		break;
-	default:
-		break;
-	}
-}
+class WaitStartOfTemplateBlock : public ItemsFilterFinderStateBase {
+public:
+	WaitStartOfTemplateBlock( ItemsFilterFinder* finder, const String& blockName )
+	: ItemsFilterFinderStateBase(finder)
+	, m_blockName(blockName) {}
 
-void ItemsFilterFinder::value(String value) {
-	if (m_state == State::ReadItems) {
-		m_bData.m_tokens.emplace(std::move(value));
-	}
-}
-
-void ItemsFilterFinder::startArray() {
-	switch(m_state) {
-	case State::WaitStartOfTemplatesBlock:
-		break;
-	case State::WaitStartOfBlock:
-		break;
-	case State::WaitItemFilterFieldKey:
-		break;
-	case State::WaitNamesFieldKey:
-		break;
-	case State::WaitArrayBegin:
-		m_state = State::ReadItems;
-		break;
-	case State::ReadItems:
-		m_state = State::Failed;
-		break;
-	case State::WaitingEndOfBlock:
-		break;
-	default:
-		break;
-	}
-}
-
-void ItemsFilterFinder::endArray() {
-	switch(m_state) {
-	case State::WaitStartOfTemplatesBlock:
-		break;
-	case State::WaitStartOfBlock:
-		if (m_parser.depth() == m_blockDept - 1) {
-			m_state = State::Completed;
+	void key(String key) override {
+		if (1 == finder().parserDepth() && m_blockName == key) {
+			finder().OnTemplateBlockWasFounded();
 		}
-		break;
-	case State::WaitItemFilterFieldKey:
-		break;
-	case State::WaitNamesFieldKey:
-		break;
-	case State::WaitArrayBegin:
-		m_state = State::Failed;
-		break;
-	case State::ReadItems:
-		m_state = State::WaitingEndOfBlock;
-		break;
-	case State::WaitingEndOfBlock:
-		break;
-	default:
-		break;
-	}
-}
+	};
 
-void ItemsFilterFinder::startObject() {
-	switch(m_state) {
-	case State::WaitStartOfTemplatesBlock:
-		break;
-	case State::WaitStartOfBlock:
-		m_state = State::WaitItemFilterFieldKey;
-		m_bData.m_start = m_pos;
-		break;
-	case State::WaitItemFilterFieldKey:
-		break;
-	case State::WaitNamesFieldKey:
-		break;
-	case State::WaitArrayBegin:
-		m_state = State::Failed;
-		break;
-	case State::ReadItems:
-		m_state = State::Failed;
-		break;
-	case State::WaitingEndOfBlock:
-		break;
-	default:
-		break;
-	}
-}
+private:
+	const String m_blockName;
+};
 
-void ItemsFilterFinder::endObject() {
-	switch(m_state) {
-	case State::WaitStartOfTemplatesBlock:
-		break;
-	case State::WaitStartOfBlock:
-		break;
-	case State::WaitItemFilterFieldKey:
-		break;
-	case State::WaitNamesFieldKey:
-		break;
-	case State::WaitArrayBegin:
-		m_state = State::Failed;
-		break;
-	case State::ReadItems:
-		m_state = State::Failed;
-		break;
-	case State::WaitingEndOfBlock:
-		if (m_parser.depth() == m_blockDept) {
-			m_bData.m_end = m_pos + 1;
-			m_dataList.emplace_back(std::move(m_bData));
-			m_bData.reset();
-			m_state = State::WaitStartOfBlock;
+class WaitStartOfBlock : public ItemsFilterFinderStateBase {
+public:
+	WaitStartOfBlock(ItemsFilterFinder* finder)
+	: ItemsFilterFinderStateBase(finder) {}
+
+	void key(String key) override {
+		if ( key == "item_filter" ) {
+			finder().OnItemFilterBlockWasFounded();
 		}
-		break;
-	default:
-		break;
+		else if ( key == "fields") {
+			//finder().OnFieldsBlockWasFounded();
+		}
+	};
+
+	void startObject() override {
+		if (finder().parserDepth() == finder().blockDepth()) {
+			finder().OnTemplateStart();
+		}
+	};
+
+	void endObject() override {
+		if (finder().parserDepth() == finder().blockDepth()) {
+			finder().OnTemplateEnd();
+		}
+	};
+
+	void endArray() override {
+		if (finder().parserDepth() == finder().blockDepth() - 1) {
+			finder().OnCompleted();
+		}
+	};
+};
+
+class WaitNamesField : public ItemsFilterFinderStateBase {
+public:
+	using ItemsFilterFinderStateBase::ItemsFilterFinderStateBase;
+
+	void key(String key) override {
+		if ( key == "names" ) {
+			finder().OnNamesFieldWasFounded();
+		}
 	}
+};
+
+class ReadItemsFilterValues : public ItemsFilterFinderStateBase {
+public:
+	using TokensSet = ItemsFilterFinder::TokensSet;
+
+	using ItemsFilterFinderStateBase::ItemsFilterFinderStateBase;
+
+	void key(String key) override {
+		finder().OnFailed("Unexpected key in ReadItemsFilterValues");
+	};
+
+	void value(String value) override {
+		if ( m_isArrayStarted ) {
+			m_tokens.emplace(value);
+		}
+		else {
+			finder().OnFailed("Value should be array in ReadItemsFilterValues.");
+		}
+	};
+
+	void value(int value) override {
+		finder().OnFailed("Unexpected int value in ReadItemsFilterValues. Only strings is supported!");
+	};
+
+	void value(float value) override {
+		finder().OnFailed("Unexpected float value in ReadItemsFilterValues. Only strings is supported!");
+	};
+
+	void value(bool value) override {
+		finder().OnFailed("Unexpected bool value in ReadItemsFilterValues. Only strings is supported!");
+	};
+
+	void value(std::nullptr_t) override {
+		finder().OnFailed("Unexpected nullptr value in ReadItemsFilterValues. Only strings is supported!");
+	};
+
+	void startArray() override {
+		if (m_isArrayStarted) {
+			finder().OnFailed("Unexpected array value in ReadItemsFilterValues. Only strings is supported!");
+		}
+		else {
+			m_isArrayStarted = true;
+		}
+	};
+
+	void endArray() override {
+		if ( m_isArrayStarted ) {
+			finder().OnItemFiltersValuesWasReaded(std::move(m_tokens));
+		}
+		else {
+			finder().OnFailed("Value should be array in ReadItemsFilterValues.");
+		}
+	};
+
+	void startObject() override {
+		finder().OnFailed("Unexpected start object in ReadItemsFilterValues");
+	};
+
+	void endObject() override {
+		finder().OnFailed("Unexpected end object in ReadItemsFilterValues");
+	};
+
+private:
+	bool m_isArrayStarted = false;
+	TokensSet m_tokens;
+};
+
+class FindItemBlock : public ItemsFilterFinderStateBase {
+public:
+	using ItemsFilterFinderStateBase::ItemsFilterFinderStateBase;
+};
+
+class WaitingEndOfBlock : public ItemsFilterFinderStateBase {
+public:
+	using ItemsFilterFinderStateBase::ItemsFilterFinderStateBase;
+};
+
+class Completed : public ItemsFilterFinderStateBase {
+public:
+	using ItemsFilterFinderStateBase::ItemsFilterFinderStateBase;
+};
+
+class Failed : public ItemsFilterFinderStateBase {
+public:
+	using ItemsFilterFinderStateBase::ItemsFilterFinderStateBase;
+};
+
+} // private namespace
+
+ItemsFilterFinder::ItemsFilterFinder( const String& field )
+: m_field(field) {};
+
+template<typename S, typename... Args>
+inline void ItemsFilterFinder::setState( Args... args ) {
+	m_state2 = std::make_unique<S>(this, args...);
+	m_parser.setListener(m_state2.get());
 }
 
 std::tuple<bool, ItemsFilterFinder::DataList> ItemsFilterFinder::find( common::IReadStream& rStream ) {
-	/*JsonStreamingParser jsParser;
+	JsonStreamingParser jsParser;
 	JsonPrinter jsPrinter(jsParser);
-	jsParser.setListener(&jsPrinter);*/
+	jsParser.setListener(&jsPrinter);
+
+	setState<WaitStartOfTemplateBlock>(m_field);
 
 	char ch;
 	while( rStream.read(&ch, 1) ) {
-		//jsParser.parse(ch);
+		jsParser.parse(ch);
 
 		m_parser.parse(ch);
-		if ( State::Completed == m_state || State::Failed == m_state ) {
+		if ( State::InWork != m_state ) {
 			break;
 		}
 		++m_pos;
 	}
 	return std::make_tuple(State::Completed == m_state, std::move(m_dataList));
 }
+
+void ItemsFilterFinder::OnFailed( String&& reason ) {
+	m_state = State::Failed;
+}
+
+void ItemsFilterFinder::OnCompleted() {
+	m_state = State::Completed;
+}
+
+void ItemsFilterFinder::OnTemplateBlockWasFounded() {
+	setState<WaitStartOfBlock>();
+	m_blockDept = m_parser.depth() + 1;
+}
+
+void ItemsFilterFinder::OnTemplateStart() {
+	m_bData.m_start = m_pos;
+}
+
+void ItemsFilterFinder::OnTemplateEnd() {
+	m_bData.m_end = m_pos + 1;
+	m_dataList.emplace_back(std::move(m_bData));
+	m_bData.reset();
+}
+
+void ItemsFilterFinder::OnItemFilterBlockWasFounded() {
+	setState<WaitNamesField>();
+}
+
+void ItemsFilterFinder::OnFieldsBlockWasFounded() {
+	setState<FindItemBlock>();
+}
+
+void ItemsFilterFinder::OnNamesFieldWasFounded() {
+	setState<ReadItemsFilterValues>();
+}
+
+void ItemsFilterFinder::OnItemFiltersValuesWasReaded( TokensSet&& tokens ) {
+	m_bData.m_tokens = std::move(tokens);
+	setState<WaitStartOfBlock>();
+}
+
+//-------------------------------------------------------------------------------
 
 TemplatesGenerator::TemplatesGenerator( common::JsonStreamGenerator& gen )
 : m_gen(gen) {

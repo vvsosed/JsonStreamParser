@@ -6,6 +6,7 @@
 #include <list>
 #include <set>
 #include <tuple>
+#include <memory>
 
 namespace common {
 class IReadStream;
@@ -43,7 +44,7 @@ public:
 
 void testJsonPrinter( common::IReadStream& rStream );
 
-class ItemsFilterFinder : public JsonListener {
+class ItemsFilterFinder {
 public:
 	using TokenType = std::string;
 	using TokensSet = std::set<TokenType>;
@@ -60,42 +61,57 @@ public:
 
 	using DataList = std::list<BlockData>;
 
+	using StateUPtr = std::unique_ptr<JsonListener>;
+
 	enum class State {
-		WaitStartOfTemplatesBlock,
-		WaitStartOfBlock,
-		WaitItemFilterFieldKey,
-		WaitNamesFieldKey,
-		WaitArrayBegin,
-		ReadItems,
-		WaitingEndOfBlock,
+		InWork,
 		Completed,
 		Failed,
 	};
 
 	ItemsFilterFinder( const String& field );
 
-	void key(String key) override;
-
-	void value(String value) override;
-
-	void startArray() override;
-
-	void endArray() override;
-
-	void startObject() override;
-
-	void endObject() override;
-
 	std::tuple<bool, DataList> find( common::IReadStream& rStream );
+
+	inline auto parserDepth() const {
+		return m_parser.depth();
+	}
+
+	inline auto blockDepth() const {
+		return m_blockDept;
+	}
+
+	template<typename S, typename... Args>
+	inline void setState( Args... args );
+
+	void OnFailed( String&& reason );
+
+	void OnCompleted();
+
+	void OnTemplateBlockWasFounded();
+
+	void OnTemplateStart();
+
+	void OnTemplateEnd();
+
+	void OnItemFilterBlockWasFounded();
+
+	void OnFieldsBlockWasFounded();
+
+	void OnNamesFieldWasFounded();
+
+	void OnItemFiltersValuesWasReaded( TokensSet&& tokens );
 
 private:
 	const String& m_field;
-	State m_state = State::WaitStartOfTemplatesBlock;
+	State m_state = State::InWork;
 	int m_blockDept = -1,
 		m_pos = 0;
 	BlockData m_bData;
 	DataList m_dataList;
 	JsonStreamingParser m_parser;
+
+	StateUPtr m_state2;
 };
 
 class TemplatesGenerator : public JsonListener {
