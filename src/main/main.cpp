@@ -131,6 +131,36 @@ void testJssp2() {
 void testJssp3() {
 	auto fStream = createReadFileStream(JS_FILE2);
 	jssp::ItemsFilterFinder finder("then");
+	jssp::ItemsFilterFinder::DataList dList;
+	bool isSuccess;
+	std::tie(isSuccess, dList) = finder.find(*fStream);
+	for (const auto& data : dList) {
+		std::cout << "start=" << data.m_start
+				  << "  end=" << data.m_end
+				  << "  items=" << data.m_tokens.size()
+				  << std::endl;
+
+		if ( !fStream->reset(data.m_itemBlockStart) ) {
+			std::cerr << "Can't reset stream!" << std::endl;
+			return;
+		}
+
+		auto bytesCount = data.m_itemBlockEnd - data.m_itemBlockStart;
+		while( bytesCount-- ) {
+			char ch;
+			if ( !fStream->read(&ch, 1) ) {
+				std::cout << "\nCan't read next char from stream!" << std::endl;
+				return;
+			}
+			std::cout << ch;
+		}
+		std::cout << std::endl;
+	}
+}
+
+void testJssp4() {
+	auto fStream = createReadFileStream(JS_FILE2);
+	jssp::ItemsFilterFinder finder("then");
 	jssp::ItemsFilterFinder::DataList dataList;
 	bool isSuccess;
 	std::tie(isSuccess, dataList) = finder.find(*fStream);
@@ -166,7 +196,7 @@ void testJssp3() {
 int main(int argc, char**argv) {
 	std::cout << "We need json streaming parser!" << std::endl;
 
-	testJssp3();
+	testJssp4();
 
 	return 0;
 }

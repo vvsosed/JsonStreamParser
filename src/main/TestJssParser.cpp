@@ -116,7 +116,7 @@ public:
 			finder().OnItemFilterBlockWasFounded();
 		}
 		else if ( key == "fields") {
-			//finder().OnFieldsBlockWasFounded();
+			finder().OnFieldsBlockWasFounded();
 		}
 	};
 
@@ -219,6 +219,47 @@ private:
 class FindItemBlock : public ItemsFilterFinderStateBase {
 public:
 	using ItemsFilterFinderStateBase::ItemsFilterFinderStateBase;
+
+	void key(String key) override {
+		m_key = key;
+	};
+
+	void value(String value) override {
+		if (m_key == "name" && value == "item") {
+			m_isNameValid = true;
+		}
+		else if (m_key == "type" && value == "item") {
+			m_isTypeValid = true;
+		}
+		else if (m_key == "value" && value == "value") {
+			m_isValueValid = true;
+		}
+		else {
+			m_key.clear();
+		}
+	}
+
+	void startObject() override {
+		m_start = finder().streamPos();
+	};
+
+	void endObject() override {
+		if (m_isNameValid && m_isTypeValid && m_isValueValid) {
+			finder().OnItemBlockWasFounded(m_start, finder().streamPos() + 1);
+		}
+		else {
+			m_isNameValid = false;
+		    m_isTypeValid = false;
+			m_isValueValid = false;
+		}
+	};
+
+private:
+	String m_key;
+	bool m_isNameValid = false,
+		 m_isTypeValid = false,
+		 m_isValueValid = false;
+	int m_start;
 };
 
 class WaitingEndOfBlock : public ItemsFilterFinderStateBase {
@@ -248,15 +289,15 @@ inline void ItemsFilterFinder::setState( Args... args ) {
 }
 
 std::tuple<bool, ItemsFilterFinder::DataList> ItemsFilterFinder::find( common::IReadStream& rStream ) {
-	JsonStreamingParser jsParser;
+	/*JsonStreamingParser jsParser;
 	JsonPrinter jsPrinter(jsParser);
-	jsParser.setListener(&jsPrinter);
+	jsParser.setListener(&jsPrinter);*/
 
 	setState<WaitStartOfTemplateBlock>(m_field);
 
 	char ch;
 	while( rStream.read(&ch, 1) ) {
-		jsParser.parse(ch);
+		//jsParser.parse(ch);
 
 		m_parser.parse(ch);
 		if ( State::InWork != m_state ) {
@@ -286,7 +327,9 @@ void ItemsFilterFinder::OnTemplateStart() {
 
 void ItemsFilterFinder::OnTemplateEnd() {
 	m_bData.m_end = m_pos + 1;
-	m_dataList.emplace_back(std::move(m_bData));
+	if ( m_bData.isValid()) {
+		m_dataList.emplace_back(std::move(m_bData));
+	}
 	m_bData.reset();
 }
 
@@ -296,6 +339,12 @@ void ItemsFilterFinder::OnItemFilterBlockWasFounded() {
 
 void ItemsFilterFinder::OnFieldsBlockWasFounded() {
 	setState<FindItemBlock>();
+}
+
+void ItemsFilterFinder::OnItemBlockWasFounded(const int blockStart, const int blockEnd) {
+	m_bData.m_itemBlockStart = blockStart;
+	m_bData.m_itemBlockEnd = blockEnd;
+	setState<WaitStartOfBlock>();
 }
 
 void ItemsFilterFinder::OnNamesFieldWasFounded() {

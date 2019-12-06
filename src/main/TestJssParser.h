@@ -49,12 +49,19 @@ public:
 	using TokenType = std::string;
 	using TokensSet = std::set<TokenType>;
 	struct BlockData {
-		int m_start = 0, m_end = 0;
+		int m_start = -1, m_end = -1,
+		    m_itemBlockStart = -1, m_itemBlockEnd = -1;
 		TokensSet m_tokens;
 
+		bool isValid() {
+			return !m_tokens.empty() &&
+				   0 <= m_start && 0 <= m_end &&
+				   0 <= m_itemBlockStart && 0 <= m_itemBlockEnd;
+		}
+
 		void reset() {
-			m_start = 0;
-			m_end = 0;
+			m_start = -1; m_end = -1;
+			m_itemBlockStart = -1; m_itemBlockEnd = -1;
 			m_tokens = TokensSet();
 		}
 	};
@@ -81,6 +88,10 @@ public:
 		return m_blockDept;
 	}
 
+	inline auto streamPos() const {
+		return m_pos;
+	}
+
 	template<typename S, typename... Args>
 	inline void setState( Args... args );
 
@@ -97,6 +108,8 @@ public:
 	void OnItemFilterBlockWasFounded();
 
 	void OnFieldsBlockWasFounded();
+
+	void OnItemBlockWasFounded(const int blockStart, const int blockEnd);
 
 	void OnNamesFieldWasFounded();
 
