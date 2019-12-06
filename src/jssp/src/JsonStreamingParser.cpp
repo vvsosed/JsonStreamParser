@@ -249,7 +249,7 @@ void JsonStreamingParser<String>::startValue(char c) {
   }
 
 template <typename String>
-boolean JsonStreamingParser<String>::isDigit(char c) {
+bool JsonStreamingParser<String>::isDigit(char c) {
     // Only concerned with the first character in a number.
     return (c >= '0' && c <= '9') || c == '-';
   }
@@ -367,7 +367,7 @@ void JsonStreamingParser<String>::processUnicodeCharacter(char c) {
   }
 
 template <typename String>
-boolean JsonStreamingParser<String>::isHexCharacter(char c) {
+bool JsonStreamingParser<String>::isHexCharacter(char c) {
     return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
   }
 
@@ -390,7 +390,7 @@ int JsonStreamingParser<String>::getHexArrayAsDecimal(char hexArray[], int lengt
   }
 
 template <typename String>
-boolean JsonStreamingParser<String>::doesCharArrayContain(char myArray[], int length, char c) {
+bool JsonStreamingParser<String>::doesCharArrayContain(char myArray[], int length, char c) {
     for (int i = 0; i < length; i++) {
       if (myArray[i] == c) {
         return true;
