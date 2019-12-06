@@ -86,29 +86,57 @@ public:
 		return m_finder;
 	}
 
+	void* operator new( size_t size ) {
+		void* p = common::blocks_allocator::allocate( size );
+		return p;
+	}
+
+	void operator delete( void* p ) {
+		common::blocks_allocator::deallocate( p );
+	}
+
 private:
 	ItemsFilterFinder& m_finder;
 };
 
-class WaitStartOfTemplateBlock : public ItemsFilterFinderStateBase {
+class FindTemplateBlocksArray : public ItemsFilterFinderStateBase {
 public:
-	WaitStartOfTemplateBlock( ItemsFilterFinder* finder, const String& blockName )
+	FindTemplateBlocksArray( ItemsFilterFinder* finder, const String& blockName )
 	: ItemsFilterFinderStateBase(finder)
 	, m_blockName(blockName) {}
 
 	void key(String key) override {
-		if (1 == finder().parserDepth() && m_blockName == key) {
-			finder().OnTemplateBlockWasFounded();
+		if ( 1 == finder().parserDepth() ) {
+			m_isBlockKeyFounded = ( m_blockName == key );
+		}
+	};
+
+	void startObject() override {
+		if ( m_isBlockKeyFounded ) {
+			finder().OnFailed("Waiting for beginning of array!");
+		}
+	};
+
+	void endObject() override {
+		if ( m_isBlockKeyFounded ) {
+			finder().OnFailed("Waiting for beginning of array!");
+		}
+	};
+
+	void startArray() override {
+		if ( m_isBlockKeyFounded ) {
+			finder().OnTemplateBlocksArrayWasFounded();
 		}
 	};
 
 private:
+	bool m_isBlockKeyFounded = false;
 	const String m_blockName;
 };
 
-class WaitStartOfBlock : public ItemsFilterFinderStateBase {
+class ProcessTemplateBlock : public ItemsFilterFinderStateBase {
 public:
-	WaitStartOfBlock(ItemsFilterFinder* finder)
+	ProcessTemplateBlock(ItemsFilterFinder* finder)
 	: ItemsFilterFinderStateBase(finder) {}
 
 	void key(String key) override {
@@ -139,7 +167,7 @@ public:
 	};
 };
 
-class WaitNamesField : public ItemsFilterFinderStateBase {
+class WaitItemsFilterNamesField : public ItemsFilterFinderStateBase {
 public:
 	using ItemsFilterFinderStateBase::ItemsFilterFinderStateBase;
 
@@ -278,7 +306,7 @@ std::tuple<bool, ItemsFilterFinder::DataList> ItemsFilterFinder::find( common::I
 	JsonPrinter jsPrinter(jsParser);
 	jsParser.setListener(&jsPrinter);*/
 
-	setState<WaitStartOfTemplateBlock>(m_field);
+	setState<FindTemplateBlocksArray>(m_field);
 
 	char ch;
 	while( rStream.read(&ch, 1) ) {
@@ -290,6 +318,7 @@ std::tuple<bool, ItemsFilterFinder::DataList> ItemsFilterFinder::find( common::I
 		}
 		++m_pos;
 	}
+
 	return std::make_tuple(State::Completed == m_state, std::move(m_dataList));
 }
 
@@ -301,8 +330,8 @@ void ItemsFilterFinder::OnCompleted() {
 	m_state = State::Completed;
 }
 
-void ItemsFilterFinder::OnTemplateBlockWasFounded() {
-	setState<WaitStartOfBlock>();
+void ItemsFilterFinder::OnTemplateBlocksArrayWasFounded() {
+	setState<ProcessTemplateBlock>();
 	m_blockDept = m_parser.depth() + 1;
 }
 
@@ -319,7 +348,7 @@ void ItemsFilterFinder::OnTemplateEnd() {
 }
 
 void ItemsFilterFinder::OnItemFilterBlockWasFounded() {
-	setState<WaitNamesField>();
+	setState<WaitItemsFilterNamesField>();
 }
 
 void ItemsFilterFinder::OnFieldsBlockWasFounded() {
@@ -329,7 +358,7 @@ void ItemsFilterFinder::OnFieldsBlockWasFounded() {
 void ItemsFilterFinder::OnItemBlockWasFounded(const int blockStart, const int blockEnd) {
 	m_bData.m_itemBlockStart = blockStart;
 	m_bData.m_itemBlockEnd = blockEnd;
-	setState<WaitStartOfBlock>();
+	setState<ProcessTemplateBlock>();
 }
 
 void ItemsFilterFinder::OnNamesFieldWasFounded() {
@@ -338,7 +367,7 @@ void ItemsFilterFinder::OnNamesFieldWasFounded() {
 
 void ItemsFilterFinder::OnItemFiltersValuesWasReaded( TokensSet&& tokens ) {
 	m_bData.m_tokens = std::move(tokens);
-	setState<WaitStartOfBlock>();
+	setState<ProcessTemplateBlock>();
 }
 
 //-------------------------------------------------------------------------------

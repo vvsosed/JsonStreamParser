@@ -2,9 +2,8 @@
 
 #include "JsonStreamingParser.h"
 #include "JsonListener.h"
+#include "StlBlockTypes.h"
 
-#include <list>
-#include <set>
 #include <tuple>
 #include <memory>
 
@@ -47,7 +46,7 @@ void testJsonPrinter( common::IReadStream& rStream );
 class ItemsFilterFinder {
 public:
 	using TokenType = std::string;
-	using TokensSet = std::set<TokenType>;
+	using TokensSet = common::block_set<TokenType>;
 	struct BlockData {
 		int m_start = -1, m_end = -1,
 		    m_itemBlockStart = -1, m_itemBlockEnd = -1;
@@ -66,7 +65,7 @@ public:
 		}
 	};
 
-	using DataList = std::list<BlockData>;
+	using DataList = common::block_list<BlockData>;
 
 	using StateUPtr = std::unique_ptr<JsonListener>;
 
@@ -99,7 +98,7 @@ public:
 
 	void OnCompleted();
 
-	void OnTemplateBlockWasFounded();
+	void OnTemplateBlocksArrayWasFounded();
 
 	void OnTemplateStart();
 
