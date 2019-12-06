@@ -262,21 +262,6 @@ private:
 	int m_start;
 };
 
-class WaitingEndOfBlock : public ItemsFilterFinderStateBase {
-public:
-	using ItemsFilterFinderStateBase::ItemsFilterFinderStateBase;
-};
-
-class Completed : public ItemsFilterFinderStateBase {
-public:
-	using ItemsFilterFinderStateBase::ItemsFilterFinderStateBase;
-};
-
-class Failed : public ItemsFilterFinderStateBase {
-public:
-	using ItemsFilterFinderStateBase::ItemsFilterFinderStateBase;
-};
-
 } // private namespace
 
 ItemsFilterFinder::ItemsFilterFinder( const String& field )
