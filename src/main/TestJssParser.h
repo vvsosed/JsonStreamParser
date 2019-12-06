@@ -163,14 +163,12 @@ public:
 private:
 	bool checkFilter( const TokenType& token, const TokensSet& filtersSet ) const;
 
-	void resetItemBlockFlags();
-
 private:
+	const BlockData* m_data;
+	int m_pos;
 	bool m_isSuccess = true;
-	String m_itemValue;
+	String m_currItem;
 	String m_key;
-	bool m_isItemName = false;
-	bool m_isItemType =  false;
 	common::JsonStreamGenerator& m_gen;
 	JsonStreamingParser m_parser;
 };

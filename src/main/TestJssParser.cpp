@@ -369,16 +369,11 @@ void TemplatesGenerator::key(String key) {
 };
 
 void TemplatesGenerator::value(String value) {
-	if (value == "item") {
-		if (m_key == "name") {
-			m_isItemName = true;
-		}
-		else if (m_key == "type") {
-			m_isItemType = true;
-		}
-	}
-	else if (value == "value" && m_key == "value" && m_isItemName && m_isItemType) {
-		value = m_itemValue;
+	if ( value == "value" &&
+		 m_key == "value" &&
+		 m_data->m_itemBlockStart < m_pos &&
+		 m_data->m_itemBlockEnd > m_pos) {
+		value = m_currItem;
 	}
 	m_isSuccess = m_gen.writeProperty(nullptr, value);
 };
@@ -407,7 +402,6 @@ void TemplatesGenerator::endArray() {
 void TemplatesGenerator::endObject() {
 	m_key.clear();
 	m_isSuccess = m_gen.writeClosingSymbol();
-	resetItemBlockFlags();
 };
 
 void TemplatesGenerator::startArray() {
@@ -424,11 +418,13 @@ bool TemplatesGenerator::generate( const std::list<std::string> itemsList,
 		                           const DataList& dataList,
 								   common::IReadStream& rStream ) {
 	for (const auto& item : itemsList) {
+		m_currItem = item;
+
 		for (const auto& data : dataList) {
 			if ( !checkFilter(item, data.m_tokens) ) {
 				continue;
 			}
-			m_itemValue = item;
+			m_data = &data;
 
 			m_isSuccess = rStream.reset(data.m_start);
 			if ( !m_isSuccess ) {
@@ -436,8 +432,8 @@ bool TemplatesGenerator::generate( const std::list<std::string> itemsList,
 				break;
 			}
 
-			auto bytesCount = data.m_end - data.m_start;
-			while( bytesCount-- ) {
+			m_pos = data.m_start;
+			while( m_pos != data.m_end ) {
 				char ch;
 				m_isSuccess = (1 == rStream.read(&ch, 1));
 				if ( !m_isSuccess ) {
@@ -445,6 +441,7 @@ bool TemplatesGenerator::generate( const std::list<std::string> itemsList,
 					break;
 				}
 				m_parser.parse(ch);
+				++m_pos;
 			}
 
 			m_parser.reset();
@@ -460,11 +457,6 @@ bool TemplatesGenerator::checkFilter( const TokenType& token, const TokensSet& f
 		}
 	}
 	return false;
-}
-
-void TemplatesGenerator::resetItemBlockFlags() {
-	m_isItemName = false;
-	m_isItemType = false;
 }
 
 } // namespace jssp
