@@ -221,8 +221,6 @@ void ItemsFilterFinder::endObject() {
 }
 
 std::tuple<bool, ItemsFilterFinder::DataList> ItemsFilterFinder::find( common::IReadStream& rStream ) {
-	std::cout << "\n---------- Run ItemsFilterFinder::find ..." << std::endl;
-
 	/*JsonStreamingParser jsParser;
 	JsonPrinter jsPrinter(jsParser);
 	jsParser.setListener(&jsPrinter);*/
@@ -237,7 +235,6 @@ std::tuple<bool, ItemsFilterFinder::DataList> ItemsFilterFinder::find( common::I
 		}
 		++m_pos;
 	}
-	std::cout << "---------- Complete ItemsFilterFinder::find" << std::endl;
 	return std::make_tuple(State::Completed == m_state, std::move(m_dataList));
 }
 
