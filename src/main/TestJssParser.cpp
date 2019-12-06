@@ -82,11 +82,13 @@ public:
 	ItemsFilterFinderStateBase( ItemsFilterFinder* finder )
 	: m_finder(*finder) {}
 
-	virtual ~ItemsFilterFinderStateBase() = default;
-
 	inline auto& finder() {
 		return m_finder;
 	}
+
+	void error(int code) override {
+		finder().OnFailed("Parser error");
+	};
 
 	void* operator new( size_t size ) {
 		void* p = common::blocks_allocator::allocate( size );
@@ -304,15 +306,12 @@ inline void ItemsFilterFinder::setState( Args... args ) {
 }
 
 std::tuple<bool, ItemsFilterFinder::DataList> ItemsFilterFinder::find( common::IReadStream& rStream ) {
-	/*JsonStreamingParser jsParser;
-	JsonPrinter jsPrinter(jsParser);
-	jsParser.setListener(&jsPrinter);*/
-
 	setState<FindTemplateBlocksArray>(m_field);
 
 	char ch;
 	while( rStream.read(&ch, 1) ) {
-		//jsParser.parse(ch);
+		//std::cout << ch;
+		//std::cout.flush();
 
 		m_parser.parse(ch);
 		if ( State::InWork != m_state ) {

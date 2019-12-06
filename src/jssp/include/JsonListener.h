@@ -35,6 +35,8 @@ class JsonListenerBase {
     virtual void startArray() {};
 
     virtual void startObject() {};
+
+    virtual void error(int code) {};
 };
 
 } // namespace jssp

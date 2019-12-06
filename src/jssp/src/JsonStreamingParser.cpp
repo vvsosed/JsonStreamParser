@@ -47,6 +47,7 @@ void JsonStreamingParser<String>::parse(char c) {
         m_state = STATE_START_ESCAPE;
       } else if ((c < 0x1f) || (c == 0x7f)) {
         //throw new RuntimeException("Unescaped control character encountered: " + c + " at position" + characterCounter);
+    	onError(Error::Unescaped_control_character);
       } else {
         buffer[bufferPos] = c;
         increaseBufferPointer();
@@ -66,11 +67,13 @@ void JsonStreamingParser<String>::parse(char c) {
         startKey();
       } else {
         //throw new RuntimeException("Start of string expected for object key. Instead got: " + c + " at position" + characterCounter);
+    	onError(Error::Start_of_string_expected);
       }
       break;
     case STATE_END_KEY:
       if (c != ':') {
         //throw new RuntimeException("Expected ':' after key. Instead got " + c + " at position" + characterCounter);
+    	onError(Error::Expected_double_point_after_key);
       }
       m_state = STATE_AFTER_KEY;
       break;
@@ -100,6 +103,7 @@ void JsonStreamingParser<String>::parse(char c) {
           m_state = STATE_IN_OBJECT;
         } else {
           //throw new RuntimeException("Expected ',' or '}' while parsing object. Got: " + c + ". " + characterCounter);
+        	onError(Error::Expected_comma_while_parsing_object);
         }
       } else if (within == STACK_ARRAY) {
         if (c == ']') {
@@ -112,6 +116,7 @@ void JsonStreamingParser<String>::parse(char c) {
         }
       } else {
         //throw new RuntimeException("Finished a literal, but unclear what state to move to. Last state: " + characterCounter);
+    	onError(Error::Unclear_what_state_to_move_to);
       }
     }break;
     case STATE_IN_NUMBER:
@@ -121,14 +126,17 @@ void JsonStreamingParser<String>::parse(char c) {
       } else if (c == '.') {
         if (doesCharArrayContain(buffer, bufferPos, '.')) {
           //throw new RuntimeException("Cannot have multiple decimal points in a number. " + characterCounter);
+          onError(Error::Cannot_have_multiple_decimal_points_in_a_number);
         } else if (doesCharArrayContain(buffer, bufferPos, 'e')) {
           //throw new RuntimeException("Cannot have a decimal point in an exponent." + characterCounter);
+          onError(Error::Cannot_have_a_decimal_point_in_an_exponent);
         }
         buffer[bufferPos] = c;
         increaseBufferPointer();
       } else if (c == 'e' || c == 'E') {
         if (doesCharArrayContain(buffer, bufferPos, 'e')) {
           //throw new RuntimeException("Cannot have multiple exponents in a number. " + characterCounter);
+          onError(Error::Cannot_have_multiple_exponents_in_a_number);
         }
         buffer[bufferPos] = c;
         increaseBufferPointer();
@@ -136,6 +144,7 @@ void JsonStreamingParser<String>::parse(char c) {
         char last = buffer[bufferPos - 1];
         if (!(last == 'e' || last == 'E')) {
           //throw new RuntimeException("Can only have '+' or '-' after the 'e' or 'E' in a number." + characterCounter);
+          onError(Error::Can_only_have_plus_or_minus_after_the_e_or_E_in_a_number);
         }
         buffer[bufferPos] = c;
         increaseBufferPointer();
@@ -176,14 +185,18 @@ void JsonStreamingParser<String>::parse(char c) {
         // throw new ParsingError($this->_line_number,
         // $this->_char_number,
         // "Document must start with object or array.");
+    	onError(Error::Document_must_start_with_object_or_array);
       }
       break;
-    //case STATE_DONE:
+    case STATE_DONE:
       // throw new ParsingError($this->_line_number, $this->_char_number,
       // "Expected end of document.");
-    //default:
+      onError(Error::Expected_end_of_document);
+      break;
+    default:
       // throw new ParsingError($this->_line_number, $this->_char_number,
       // "Internal error. Reached an unknown state: ".$this->_state);
+      onError(Error::Reached_an_unknown_state);
     }
     characterCounter++;
   }
@@ -216,6 +229,7 @@ void JsonStreamingParser<String>::endString() {
     } else {
       // throw new ParsingError($this->_line_number, $this->_char_number,
       // "Unexpected end of string.");
+      onError(Error::Unexpected_end_of_string);
     }
     bufferPos = 0;
   }
@@ -245,6 +259,7 @@ void JsonStreamingParser<String>::startValue(char c) {
     } else {
       // throw new ParsingError($this->_line_number, $this->_char_number,
       // "Unexpected character for value: ".$c);
+      onError(Error::Unexpected_character_for_value);
     }
   }
 
@@ -261,6 +276,7 @@ void JsonStreamingParser<String>::endArray() {
     if (popped != STACK_ARRAY) {
       // throw new ParsingError($this->_line_number, $this->_char_number,
       // "Unexpected end of array encountered.");
+      onError(Error::Unexpected_end_of_array_encountered);
     }
     myListener->endArray();
     m_state = STATE_AFTER_VALUE;
@@ -278,11 +294,12 @@ void JsonStreamingParser<String>::startKey() {
 
 template <typename String>
 void JsonStreamingParser<String>::endObject() {
-    int popped = stack[stackPos];
+    int popped = stack[stackPos - 1];
     stackPos--;
     if (popped != STACK_OBJECT) {
       // throw new ParsingError($this->_line_number, $this->_char_number,
       // "Unexpected end of object encountered.");
+      onError(Error::Unexpected_end_of_object_encountered);
     }
     myListener->endObject();
     m_state = STATE_AFTER_VALUE;
@@ -290,6 +307,11 @@ void JsonStreamingParser<String>::endObject() {
       endDocument();
     }
   }
+
+template <typename String>
+void JsonStreamingParser<String>::onError( Error error ) {
+	myListener->error(int(error));
+}
 
 template <typename String>
 void JsonStreamingParser<String>::processEscapeCharacters(char c) {
@@ -322,6 +344,7 @@ void JsonStreamingParser<String>::processEscapeCharacters(char c) {
     } else {
       // throw new ParsingError($this->_line_number, $this->_char_number,
       // "Expected escaped character after backslash. Got: ".$c);
+      onError(Error::Expected_escaped_character_after_backslash);
     }
     if (m_state != STATE_UNICODE) {
       m_state = STATE_IN_STRING;
@@ -334,6 +357,7 @@ void JsonStreamingParser<String>::processUnicodeCharacter(char c) {
       // throw new ParsingError($this->_line_number, $this->_char_number,
       // "Expected hex character for escaped Unicode character. Unicode parsed: "
       // . implode($this->_unicode_buffer) . " and got: ".$c);
+      onError(Error::Expected_hex_character_for_escaped_Unicode_character);
     }
 
     unicodeBuffer[unicodeBufferPos] = c;
@@ -352,6 +376,7 @@ void JsonStreamingParser<String>::processUnicodeCharacter(char c) {
           // throw new ParsingError($this->_line_number,
           // $this->_char_number,
           // "Missing high surrogate for Unicode low surrogate.");
+          onError(Error::Missing_high_surrogate_for_Unicode_low_surrogate);
         }
         int combinedCodePoint = ((unicodeHighSurrogate - 0xD800) * 0x400) + (codepoint - 0xDC00) + 0x10000;
         endUnicodeCharacter(combinedCodePoint);
@@ -359,6 +384,7 @@ void JsonStreamingParser<String>::processUnicodeCharacter(char c) {
         // throw new ParsingError($this->_line_number,
         // $this->_char_number,
         // "Invalid low surrogate following Unicode high surrogate.");
+        onError(Error::Invalid_low_surrogate_following_Unicode_high_surrogate);
         endUnicodeCharacter(codepoint);
       } else {
         endUnicodeCharacter(codepoint);
@@ -406,6 +432,7 @@ void JsonStreamingParser<String>::endUnicodeSurrogateInterstitial() {
       // throw new ParsingError($this->_line_number, $this->_char_number,
       // "Expected '\\u' following a Unicode high surrogate. Got: " .
       // $unicode_escape);
+      onError(Error::Expected_u_following_a_Unicode_high_surrogate);
     }
     unicodeBufferPos = 0;
     unicodeEscapeBufferPos = 0;
@@ -460,6 +487,7 @@ void JsonStreamingParser<String>::endTrue() {
     } else {
       // throw new ParsingError($this->_line_number, $this->_char_number,
       // "Expected 'true'. Got: ".$true);
+      onError(Error::Expected_true);
     }
     bufferPos = 0;
     m_state = STATE_AFTER_VALUE;
@@ -474,6 +502,7 @@ void JsonStreamingParser<String>::endFalse() {
     } else {
       // throw new ParsingError($this->_line_number, $this->_char_number,
       // "Expected 'true'. Got: ".$true);
+      onError(Error::Expected_false);
     }
     bufferPos = 0;
     m_state = STATE_AFTER_VALUE;
@@ -488,6 +517,7 @@ void JsonStreamingParser<String>::endNull() {
     } else {
       // throw new ParsingError($this->_line_number, $this->_char_number,
       // "Expected 'true'. Got: ".$true);
+      onError(Error::Expected_nullptr);
     }
     bufferPos = 0;
     m_state = STATE_AFTER_VALUE;
