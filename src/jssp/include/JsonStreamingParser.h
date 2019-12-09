@@ -32,6 +32,8 @@ STACK_KEY               =  2,
 STACK_STRING            =  3,
 
 BUFFER_MAX_LENGTH       = 512,
+STACK_MAX_SIZE          = 20,
+UNICODE_BUFFER_SIZE     = 10,
 };
 
 enum class Error : int {
@@ -139,7 +141,7 @@ class JsonStreamingParser {
 
 private:
     int m_state;
-	int stack[20];
+	int stack[STACK_MAX_SIZE];
 	int stackPos = 0;
 	JsonListener* myListener;
 
@@ -148,10 +150,10 @@ private:
 	char buffer[BUFFER_MAX_LENGTH];
 	int bufferPos = 0;
 
-	char unicodeEscapeBuffer[10];
+	char unicodeEscapeBuffer[UNICODE_BUFFER_SIZE];
 	int unicodeEscapeBufferPos = 0;
 
-	char unicodeBuffer[10];
+	char unicodeBuffer[UNICODE_BUFFER_SIZE];
 	int unicodeBufferPos = 0;
 
 	int characterCounter = 0;
